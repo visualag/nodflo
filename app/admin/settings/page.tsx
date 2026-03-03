@@ -51,21 +51,24 @@ export default function AdminSettingsPage() {
         if (e) e.preventDefault();
         if (!settings) return;
         setSaving(true); setMessage("");
-        console.log("Saving settings payload:", settings);
+        console.log("Attempting to save settings:", settings);
         try {
             const res = await fetch("/api/settings", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings),
             });
+            const result = await res.json();
+            console.log("Save response:", result);
             if (res.ok) {
                 setMessage("Settings saved successfully.");
                 setOriginal(settings);
             } else {
-                setMessage("Error saving settings.");
+                setMessage(`Error: ${result.error || "Failed to save"}`);
             }
         } catch (e) {
-            setMessage("Connection error.");
+            console.error("Save error:", e);
+            setMessage("Connection error. Check console.");
         }
         setSaving(false);
     }
@@ -76,55 +79,70 @@ export default function AdminSettingsPage() {
         formData.append("folder", "settings");
 
         try {
+            console.log(`Uploading file to ${target}...`);
             const res = await fetch("/api/upload", {
                 method: "POST",
                 body: formData,
             });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || "Upload failed");
+            }
+
             const data = await res.json();
+            console.log("Upload success, data:", data);
+
             if (data.url) {
                 if (target === "hero" && typeof index === "number") {
                     updateSlide(index, "img", data.url);
                 } else if (target === "extra") {
-                    setSettings({ ...settings!, homepageExtraImage: data.url });
+                    setSettings(prev => prev ? ({ ...prev, homepageExtraImage: data.url }) : null);
                 } else if (target === "extra2") {
-                    setSettings({ ...settings!, homepageExtra2Image: data.url });
+                    setSettings(prev => prev ? ({ ...prev, homepageExtra2Image: data.url }) : null);
                 }
-                setMessage("Image uploaded! Don't forget to 'Save All Changes' below.");
+                setMessage("Image uploaded! Remember to click 'Save All Changes'.");
+            } else {
+                throw new Error("No URL in upload response");
             }
-        } catch (err) {
-            console.error("Upload failed", err);
+        } catch (err: any) {
+            console.error("Upload process failed:", err);
+            setMessage(`Upload failed: ${err.message}`);
         }
     }
 
     function updateSlide(index: number, field: keyof HeroSlide, value: string) {
-        if (!settings) return;
-        const newSlides = [...settings.heroSlides];
-        newSlides[index] = { ...newSlides[index], [field]: value };
-        setSettings({ ...settings, heroSlides: newSlides });
-    }
-
-    function addSlide() {
-        if (!settings) return;
-        setSettings({
-            ...settings,
-            heroSlides: [...settings.heroSlides, { img: "", eyebrow: "", title: "", subtitle: "" }]
+        setSettings(prev => {
+            if (!prev) return null;
+            const newSlides = [...prev.heroSlides];
+            newSlides[index] = { ...newSlides[index], [field]: value };
+            return { ...prev, heroSlides: newSlides };
         });
     }
 
+    function addSlide() {
+        setSettings(prev => prev ? ({
+            ...prev,
+            heroSlides: [...prev.heroSlides, { img: "", eyebrow: "", title: "", subtitle: "" }]
+        }) : null);
+    }
+
     function removeSlide(index: number) {
-        if (!settings) return;
-        const newSlides = settings.heroSlides.filter((_, i) => i !== index);
-        setSettings({ ...settings, heroSlides: newSlides });
+        setSettings(prev => prev ? ({
+            ...prev,
+            heroSlides: prev.heroSlides.filter((_, i) => i !== index)
+        }) : null);
     }
 
     function moveSlide(index: number, direction: "up" | "down") {
-        if (!settings) return;
-        const newSlides = [...settings.heroSlides];
-        const newIndex = direction === "up" ? index - 1 : index + 1;
-        if (newIndex < 0 || newIndex >= newSlides.length) return;
-
-        [newSlides[index], newSlides[newIndex]] = [newSlides[newIndex], newSlides[index]];
-        setSettings({ ...settings, heroSlides: newSlides });
+        setSettings(prev => {
+            if (!prev) return null;
+            const newSlides = [...prev.heroSlides];
+            const newIndex = direction === "up" ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= newSlides.length) return prev;
+            [newSlides[index], newSlides[newIndex]] = [newSlides[newIndex], newSlides[index]];
+            return { ...prev, heroSlides: newSlides };
+        });
     }
 
     if (loading) return <div className="p-8">Loading settings...</div>;
