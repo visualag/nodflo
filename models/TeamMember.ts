@@ -1,0 +1,12 @@
+import mongoose, { Schema, models } from 'mongoose';
+
+const TeamMemberSchema = new Schema({
+    name: { type: String, required: true },
+    role: { type: String, required: true },
+    bio: { type: String },
+    photo: { type: String },
+    order: { type: Number, default: 0 },
+    email: { type: String },
+}, { timestamps: true });
+
+export default models.TeamMember || mongoose.model('TeamMember', TeamMemberSchema);

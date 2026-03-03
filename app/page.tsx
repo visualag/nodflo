@@ -1,65 +1,283 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Nav from "@/components/Nav";
+import Footer from "@/components/Footer";
 
-export default function Home() {
+interface Exhibition {
+  _id: string;
+  title: string;
+  artist: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  coverImage: string;
+  slug: string;
+}
+
+interface NewsItem {
+  _id: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  image: string;
+  source: string;
+  link: string;
+}
+
+interface OpenCall {
+  _id: string;
+  title: string;
+  deadline: string;
+  slug: string;
+}
+
+function formatDate(d: string) {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("en-GB", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+}
+
+const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=900&q=80";
+const HERO_SLIDES = [
+  {
+    img: "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=1800&q=80",
+    eyebrow: "Currently on View",
+    title: "NOD FLOW Gallery",
+    subtitle: "Contemporary art in dialogue",
+  },
+  {
+    img: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=1800&q=80",
+    eyebrow: "Open Exhibition",
+    title: "Space & Form",
+    subtitle: "A new perspective on abstraction",
+  },
+];
+
+export default function HomePage() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [exhibitions, setExhibitions] = useState<Exhibition[]>([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [openCalls, setOpenCalls] = useState<OpenCall[]>([]);
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((p) => (p + 1) % HERO_SLIDES.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/exhibitions").then((r) => r.json()).then(setExhibitions).catch(() => { });
+    fetch("/api/news").then((r) => r.json()).then(setNews).catch(() => { });
+    fetch("/api/open-calls").then((r) => r.json()).then(setOpenCalls).catch(() => { });
+  }, []);
+
+  const current = exhibitions.filter((e) => e.type === "current").slice(0, 3);
+  const upcoming = exhibitions.filter((e) => e.type === "upcoming").slice(0, 3);
+  const activeCall = openCalls.find((c: any) => c.isActive);
+
+  async function handleSubscribe(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) return;
+    await fetch("/api/newsletter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    setSubscribed(true);
+  }
+
+  const slide = HERO_SLIDES[currentSlide];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      <Nav dark />
+
+      {/* ── Hero ── */}
+      <section className="hero">
+        <img
+          key={currentSlide}
+          src={slide.img}
+          alt="Exhibition"
+          className="hero__img"
+          style={{ animation: "fadeUp 1.2s ease forwards" }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+        <div className="hero__content">
+          <div className="hero__eyebrow fade-up">{slide.eyebrow}</div>
+          <h1 className="hero__title fade-up fade-up-delay-1">{slide.title}</h1>
+          <p className="hero__subtitle fade-up fade-up-delay-2">{slide.subtitle}</p>
+          <Link href="/exhibitions" className="hero__cta fade-up fade-up-delay-3">
+            View Exhibitions <span>→</span>
+          </Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+        <div className="hero__indicators">
+          {HERO_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              className={`hero__dot ${i === currentSlide ? "active" : ""}`}
+              onClick={() => setCurrentSlide(i)}
+              aria-label={`Slide ${i + 1}`}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* ── Current Exhibitions ── */}
+      <section className="section">
+        <div className="container">
+          <div className="section-head">
+            <span className="section-head__title">Currently on View</span>
+            <Link href="/exhibitions?type=current" className="section-head__link">
+              View All
+            </Link>
+          </div>
+          {current.length === 0 ? (
+            <p className="text-muted" style={{ fontStyle: "italic" }}>
+              No exhibitions currently on view. Check back soon.
+            </p>
+          ) : (
+            <div className="exhibition-grid">
+              {current.map((ex) => (
+                <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
+                  <div className="exhibition-card__img-wrap">
+                    <img
+                      src={ex.coverImage || PLACEHOLDER_IMG}
+                      alt={ex.title}
+                      className="exhibition-card__img"
+                    />
+                  </div>
+                  <div className="exhibition-card__tag">On View</div>
+                  <div className="exhibition-card__title">{ex.title}</div>
+                  <div className="exhibition-card__artist">{ex.artist}</div>
+                  <div className="exhibition-card__dates">
+                    {formatDate(ex.startDate)} — {formatDate(ex.endDate)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Open Call Banner ── */}
+      {activeCall && (
+        <section className="open-call-banner">
+          <div className="container">
+            <div className="open-call-banner__inner">
+              <div>
+                <div className="open-call-banner__label">Open Call</div>
+                <div className="open-call-banner__title">{activeCall.title}</div>
+                {activeCall.deadline && (
+                  <p style={{ marginTop: 8, fontSize: "0.8rem", opacity: 0.7 }}>
+                    Deadline: {formatDate(activeCall.deadline)}
+                  </p>
+                )}
+              </div>
+              <Link href={`/open-calls/${activeCall.slug}`} className="btn btn--dark">
+                Apply Now →
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Upcoming Exhibitions ── */}
+      {upcoming.length > 0 && (
+        <section className="section" style={{ background: "var(--cream)" }}>
+          <div className="container">
+            <div className="section-head">
+              <span className="section-head__title">Coming Soon</span>
+              <Link href="/exhibitions?type=upcoming" className="section-head__link">
+                View All
+              </Link>
+            </div>
+            <div className="exhibition-grid">
+              {upcoming.map((ex) => (
+                <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
+                  <div className="exhibition-card__img-wrap">
+                    <img
+                      src={ex.coverImage || PLACEHOLDER_IMG}
+                      alt={ex.title}
+                      className="exhibition-card__img"
+                    />
+                  </div>
+                  <div className="exhibition-card__tag" style={{ color: "#004085" }}>
+                    Upcoming
+                  </div>
+                  <div className="exhibition-card__title">{ex.title}</div>
+                  <div className="exhibition-card__artist">{ex.artist}</div>
+                  <div className="exhibition-card__dates">
+                    Opening {formatDate(ex.startDate)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Latest News ── */}
+      {news.length > 0 && (
+        <section className="section">
+          <div className="container">
+            <div className="section-head">
+              <span className="section-head__title">Latest News</span>
+              <Link href="/news" className="section-head__link">
+                All News
+              </Link>
+            </div>
+            <div className="news-grid">
+              {news.slice(0, 3).map((item) => (
+                <a key={item._id} href={item.link || "#"} target="_blank" rel="noopener noreferrer" className="news-card">
+                  {item.image && (
+                    <div className="news-card__img-wrap">
+                      <img src={item.image} alt={item.title} className="news-card__img" />
+                    </div>
+                  )}
+                  <div className="news-card__source">{item.source}</div>
+                  <div className="news-card__title">{item.title}</div>
+                  <div className="news-card__date">{formatDate(item.date)}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Newsletter ── */}
+      <section className="newsletter-strip">
+        <div className="container">
+          <div className="newsletter-strip__inner">
+            <div className="newsletter-strip__text">
+              <h2>Stay informed</h2>
+              <p>Receive invitations to openings, news, and calls for artists.</p>
+            </div>
+            {subscribed ? (
+              <p style={{ color: "var(--accent)", fontSize: "0.9rem", fontStyle: "italic" }}>
+                Thank you for subscribing.
+              </p>
+            ) : (
+              <form className="newsletter-form" onSubmit={handleSubscribe}>
+                <input
+                  type="email"
+                  placeholder="Your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  id="newsletter-email"
+                />
+                <button type="submit">Subscribe</button>
+              </form>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </>
   );
 }
