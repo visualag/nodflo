@@ -8,6 +8,7 @@ const sections = [
         label: "Content",
         links: [
             { href: "/admin", label: "Dashboard", icon: "◈" },
+            { href: "/admin/settings", label: "Settings", icon: "⚙" },
             { href: "/admin/exhibitions", label: "Exhibitions", icon: "◻" },
             { href: "/admin/artists", label: "Artists", icon: "◈" },
             { href: "/admin/open-calls", label: "Open Calls", icon: "◷" },

@@ -39,6 +39,8 @@ function formatDate(d: string) {
   });
 }
 
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=900&q=80";
+
 interface HeroSlide {
   img: string; eyebrow: string; title: string; subtitle: string; link?: string;
 }
@@ -146,7 +148,7 @@ export default function HomePage() {
                 <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
                   <div className="exhibition-card__img-wrap">
                     <img
-                      src={ex.coverImage || PLACEHOLDER_IMG}
+                      src={ex.coverImage || FALLBACK_IMG}
                       alt={ex.title}
                       className="exhibition-card__img"
                     />
@@ -201,7 +203,7 @@ export default function HomePage() {
                 <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
                   <div className="exhibition-card__img-wrap">
                     <img
-                      src={ex.coverImage || PLACEHOLDER_IMG}
+                      src={ex.coverImage || FALLBACK_IMG}
                       alt={ex.title}
                       className="exhibition-card__img"
                     />
