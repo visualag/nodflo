@@ -23,6 +23,9 @@ const SettingsSchema = new mongoose.Schema({
     homepageExtraTitle: { type: String },
     homepageExtraContent: { type: String },
     homepageExtraImage: { type: String },
+    homepageExtra2Title: { type: String },
+    homepageExtra2Content: { type: String },
+    homepageExtra2Image: { type: String },
 }, { timestamps: true });
 
 export default mongoose.models.Settings || mongoose.model('Settings', SettingsSchema);

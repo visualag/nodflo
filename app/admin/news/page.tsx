@@ -91,12 +91,28 @@ export default function AdminNews() {
                                 <input className="form-input" type="url" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Cover Image URL</label>
-                                <input className="form-input" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} />
+                                <label className="form-label">Cover Image</label>
+                                {form.image && <img src={form.image} style={{ width: "100%", height: "120px", objectFit: "cover", marginBottom: "8px" }} />}
+                                <input type="file" onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        const fd = new FormData();
+                                        fd.append("file", file);
+                                        fd.append("folder", "news");
+                                        const res = await fetch("/api/upload", { method: "POST", body: fd });
+                                        const data = await res.json();
+                                        if (data.url) setForm({ ...form, image: data.url });
+                                    }
+                                }} />
+                                <input className="form-input" style={{ marginTop: 8, fontSize: "0.75rem" }} placeholder="Or paste URL..." value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Excerpt</label>
-                                <textarea className="form-textarea" rows={3} value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} />
+                                <label className="form-label">Excerpt (Short Summary)</label>
+                                <textarea className="form-textarea" rows={2} value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Full Article Content (HTML supported)</label>
+                                <textarea className="form-textarea" rows={8} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
                             </div>
                             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                                 <button onClick={() => setShowModal(false)} className="btn btn--outline">Cancel</button>

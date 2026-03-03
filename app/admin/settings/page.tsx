@@ -23,6 +23,9 @@ interface SettingsData {
     homepageExtraTitle: string;
     homepageExtraContent: string;
     homepageExtraImage: string;
+    homepageExtra2Title: string;
+    homepageExtra2Content: string;
+    homepageExtra2Image: string;
 }
 
 export default function AdminSettingsPage() {
@@ -58,7 +61,7 @@ export default function AdminSettingsPage() {
         setSaving(false);
     }
 
-    async function uploadFile(file: File, target: "hero" | "extra", index?: number) {
+    async function uploadFile(file: File, target: "hero" | "extra" | "extra2", index?: number) {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("folder", "settings");
@@ -74,6 +77,8 @@ export default function AdminSettingsPage() {
                     updateSlide(index, "img", data.url);
                 } else if (target === "extra") {
                     setSettings({ ...settings!, homepageExtraImage: data.url });
+                } else if (target === "extra2") {
+                    setSettings({ ...settings!, homepageExtra2Image: data.url });
                 }
             }
         } catch (err) {
@@ -205,6 +210,30 @@ export default function AdminSettingsPage() {
                                 <div className="form-group">
                                     <label className="form-label">Section Content (HTML allowed)</label>
                                     <textarea className="form-input" rows={4} value={settings?.homepageExtraContent} onChange={(e) => setSettings({ ...settings!, homepageExtraContent: e.target.value })} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* --- Homepage Extra 2 --- */}
+                <section className="card">
+                    <div className="card__header"><h2 className="card__title">Homepage Extra Section 2</h2></div>
+                    <div className="card__body">
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "24px" }}>
+                            <div>
+                                <label className="form-label">Section Image</label>
+                                {settings?.homepageExtra2Image && <img src={settings.homepageExtra2Image} style={{ width: "100%", height: "150px", objectFit: "cover", marginBottom: "12px" }} />}
+                                <input type="file" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "extra2")} />
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <div className="form-group">
+                                    <label className="form-label">Section Title</label>
+                                    <input className="form-input" value={settings?.homepageExtra2Title || ""} onChange={(e) => setSettings({ ...settings!, homepageExtra2Title: e.target.value })} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Section Content (HTML allowed)</label>
+                                    <textarea className="form-input" rows={4} value={settings?.homepageExtra2Content || ""} onChange={(e) => setSettings({ ...settings!, homepageExtra2Content: e.target.value })} />
                                 </div>
                             </div>
                         </div>

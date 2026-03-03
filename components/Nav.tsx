@@ -9,6 +9,7 @@ const navLinks = [
     { href: "/open-calls", label: "Open Calls" },
     { href: "/news", label: "News" },
     { href: "/team", label: "Team" },
+    { href: "/sponsors", label: "Sponsors" },
     { href: "/contact", label: "Contact" },
 ];
 

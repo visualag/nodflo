@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 
@@ -30,11 +31,11 @@ export default function NewsPage() {
                         ) : (
                             <div className="news-grid">
                                 {news.map((item) => (
-                                    <a
+                                    <Link
                                         key={item._id}
-                                        href={item.link || "#"}
+                                        href={item.link || (item.content ? `/news/${item._id}` : "#")}
                                         target={item.link ? "_blank" : "_self"}
-                                        rel="noopener noreferrer"
+                                        rel={item.link ? "noopener noreferrer" : ""}
                                         className="news-card"
                                         style={{ textDecoration: "none" }}
                                     >
@@ -51,7 +52,7 @@ export default function NewsPage() {
                                             </p>
                                         )}
                                         <div className="news-card__date" style={{ marginTop: 12 }}>{formatDate(item.date)}</div>
-                                    </a>
+                                    </Link>
                                 ))}
                             </div>
                         )}
