@@ -1,15 +1,34 @@
 import { v2 as cloudinary } from "cloudinary";
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+let isConfigured = false;
+function ensureConfigured() {
+    if (isConfigured) return;
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+        console.error("CRITICAL: Cloudinary environment variables are missing!", {
+            CLOUDINARY_CLOUD_NAME: cloudName ? "EXISTS" : "MISSING",
+            CLOUDINARY_API_KEY: apiKey ? "EXISTS" : "MISSING",
+            CLOUDINARY_API_SECRET: apiSecret ? "EXISTS" : "MISSING",
+        });
+    }
+
+    cloudinary.config({
+        cloud_name: cloudName,
+        api_key: apiKey,
+        api_secret: apiSecret,
+    });
+    console.log("Cloudinary: config() called with cloud_name:", cloudName || "EMPTY");
+    isConfigured = true;
+}
 
 export async function uploadImage(
     fileBuffer: Buffer,
     folder: string = "nodflo"
 ): Promise<{ url: string; publicId: string }> {
+    ensureConfigured();
     return new Promise((resolve, reject) => {
         console.log(`Cloudinary: Starting stream upload to folder "${folder}"...`);
         const uploadStream = cloudinary.uploader.upload_stream(

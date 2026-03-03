@@ -13,6 +13,10 @@ export async function POST(req: NextRequest) {
         const file = formData.get("file") as File;
         const folder = (formData.get("folder") as string) || "nodflo";
 
+        // Diagnostic: Log all CLOUDINARY_* variable presence
+        const cldKeys = Object.keys(process.env).filter(k => k.startsWith("CLOUDINARY_"));
+        console.log("API Upload Diagnostic: Cloudinary Envs found:", cldKeys);
+
         if (!file) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
