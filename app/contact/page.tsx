@@ -1,12 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 
 export default function ContactPage() {
+    const [settings, setSettings] = useState<any>(null);
     const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        fetch("/api/settings").then(r => r.json()).then(setSettings).catch(() => { });
+    }, []);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -19,6 +24,11 @@ export default function ContactPage() {
         setSubmitted(true);
         setLoading(false);
     }
+
+    const addr = settings?.address || "Bucharest, Romania";
+    const hours = settings?.hours || "Tuesday — Saturday, 11:00 — 18:00";
+    const email = settings?.contactEmail || "info@nodflo.com";
+    const press = settings?.pressEmail || "press@nodflo.com";
 
     return (
         <>
@@ -34,26 +44,25 @@ export default function ContactPage() {
                                 <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
                                     <div>
                                         <div style={{ fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--grey-600)", marginBottom: 12 }}>Address</div>
-                                        <p style={{ lineHeight: 1.8 }}>NOD FLOW Gallery<br />Bucharest, Romania</p>
+                                        <p style={{ lineHeight: 1.8, whiteSpace: "pre-line" }}>{addr}</p>
                                     </div>
 
                                     <div>
                                         <div style={{ fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--grey-600)", marginBottom: 12 }}>Opening Hours</div>
-                                        <p style={{ lineHeight: 1.8 }}>
-                                            Tuesday — Saturday<br />
-                                            11:00 — 18:00<br />
+                                        <p style={{ lineHeight: 1.8, whiteSpace: "pre-line" }}>
+                                            {hours}<br />
                                             <span style={{ color: "var(--grey-600)", fontSize: "0.85rem" }}>Free admission</span>
                                         </p>
                                     </div>
 
                                     <div>
                                         <div style={{ fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--grey-600)", marginBottom: 12 }}>Email</div>
-                                        <a href="mailto:info@nodflo.com" style={{ fontSize: "0.9rem" }}>info@nodflo.com</a>
+                                        <a href={`mailto:${email}`} style={{ fontSize: "0.9rem" }}>{email}</a>
                                     </div>
 
                                     <div id="visit">
                                         <div style={{ fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--grey-600)", marginBottom: 12 }}>Press</div>
-                                        <a href="mailto:press@nodflo.com" style={{ fontSize: "0.9rem" }}>press@nodflo.com</a>
+                                        <a href={`mailto:${press}`} style={{ fontSize: "0.9rem" }}>{press}</a>
                                     </div>
                                 </div>
                             </div>

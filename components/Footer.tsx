@@ -1,3 +1,5 @@
+"use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 const footerLinks = {
@@ -20,18 +22,26 @@ const footerLinks = {
 };
 
 export default function Footer() {
+    const [settings, setSettings] = useState<any>(null);
+
+    useEffect(() => {
+        fetch("/api/settings").then(r => r.json()).then(setSettings).catch(() => { });
+    }, []);
+
+    const name = settings?.galleryName || "NOD FLOW";
+    const desc = settings?.footerDescription || "A contemporary art gallery dedicated to presenting groundbreaking exhibitions.";
+    const addr = settings?.address || "Bucharest, Romania";
+    const copyright = settings?.footerText || `© ${new Date().getFullYear()} ${name}. All rights reserved.`;
+
     return (
         <footer className="footer">
             <div className="container">
                 <div className="footer__grid">
                     <div>
-                        <div className="footer__logo">NOD FLOW</div>
-                        <p className="footer__desc">
-                            A contemporary art gallery dedicated to presenting groundbreaking exhibitions
-                            and supporting the artistic dialogue between emerging and established voices.
-                        </p>
+                        <div className="footer__logo">{name}</div>
+                        <p className="footer__desc">{desc}</p>
                         <p style={{ fontSize: "0.8rem", color: "rgba(245,244,240,0.4)" }}>
-                            Bucharest, Romania
+                            {addr}
                         </p>
                     </div>
 
@@ -70,7 +80,7 @@ export default function Footer() {
                 </div>
 
                 <div className="footer__bottom">
-                    <span>© {new Date().getFullYear()} NOD FLOW. All rights reserved.</span>
+                    <span>{copyright}</span>
                     <span>
                         <Link href="/admin" style={{ color: "rgba(245,244,240,0.2)" }}>
                             Admin

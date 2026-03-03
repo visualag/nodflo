@@ -251,6 +251,29 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* ── Homepage Extra Section ── */}
+      {(settings as any)?.homepageExtraContent && (
+        <section className="section" style={{ background: "var(--cream)" }}>
+          <div className="container">
+            <div style={{ display: "grid", gridTemplateColumns: (settings as any).homepageExtraImage ? "1fr 1fr" : "1fr", gap: 64, alignItems: "center" }}>
+              {(settings as any).homepageExtraImage && (
+                <div className="fade-up">
+                  <img src={(settings as any).homepageExtraImage} alt={(settings as any).homepageExtraTitle} style={{ width: "100%", height: "auto" }} />
+                </div>
+              )}
+              <div className="fade-up">
+                {(settings as any).homepageExtraTitle && <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "2.5rem", fontWeight: 400, marginBottom: 32 }}>{(settings as any).homepageExtraTitle}</h2>}
+                <div
+                  className="rich-text"
+                  dangerouslySetInnerHTML={{ __html: (settings as any).homepageExtraContent }}
+                  style={{ lineHeight: 1.8, color: "var(--grey-600)" }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Newsletter ── */}
       <section className="newsletter-strip">
         <div className="container">
