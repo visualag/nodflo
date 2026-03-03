@@ -3,15 +3,22 @@ import { v2 as cloudinary } from "cloudinary";
 let isConfigured = false;
 function ensureConfigured() {
     if (isConfigured) return;
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+    const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
+    const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
 
     if (!cloudName || !apiKey || !apiSecret) {
         console.error("CRITICAL: Cloudinary environment variables are missing!", {
-            CLOUDINARY_CLOUD_NAME: cloudName ? "EXISTS" : "MISSING",
-            CLOUDINARY_API_KEY: apiKey ? "EXISTS" : "MISSING",
-            CLOUDINARY_API_SECRET: apiSecret ? "EXISTS" : "MISSING",
+            CLOUDINARY_CLOUD_NAME: cloudName ? `EXISTS (len: ${cloudName.length})` : "MISSING",
+            CLOUDINARY_API_KEY: apiKey ? `EXISTS (len: ${apiKey.length})` : "MISSING",
+            CLOUDINARY_API_SECRET: apiSecret ? `EXISTS (len: ${apiSecret.length})` : "MISSING",
+        });
+    } else {
+        console.log("Cloudinary Config Check:", {
+            cloudNameLen: cloudName.length,
+            apiKeyLen: apiKey.length,
+            apiSecretLen: apiSecret.length,
+            secretPreview: `${apiSecret.substring(0, 3)}...${apiSecret.substring(apiSecret.length - 3)}`
         });
     }
 
