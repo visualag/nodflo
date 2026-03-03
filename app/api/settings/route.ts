@@ -39,14 +39,23 @@ export async function PUT(req: Request) {
     await dbConnect();
     try {
         const data = await req.json();
-        let settings = await Settings.findOne();
-        if (settings) {
-            settings = await Settings.findByIdAndUpdate(settings._id, data, { new: true });
-        } else {
-            settings = await Settings.create(data);
-        }
+        console.log("PUT /api/settings received payload:", JSON.stringify(data, null, 2));
+
+        // Use findOneAndUpdate with upsert for absolute reliability
+        const settings = await Settings.findOneAndUpdate({}, data, {
+            new: true,
+            upsert: true,
+            runValidators: true,
+            setDefaultsOnInsert: true
+        });
+
+        console.log("PUT /api/settings update successful");
         return NextResponse.json(settings);
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+    } catch (error: any) {
+        console.error("PUT /api/settings error:", error);
+        return NextResponse.json({
+            error: error.message || 'Failed to update settings',
+            details: error.errors ? Object.keys(error.errors).map(k => error.errors[k].message) : []
+        }, { status: 500 });
     }
 }

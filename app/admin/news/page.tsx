@@ -9,6 +9,7 @@ export default function AdminNews() {
     const [editing, setEditing] = useState<any>(null);
     const [form, setForm] = useState<any>(EMPTY);
     const [saving, setSaving] = useState(false);
+    const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
     async function load() {
         const data = await fetch("/api/news").then((r) => r.json());
@@ -18,15 +19,42 @@ export default function AdminNews() {
 
     function openNew() { setForm(EMPTY); setEditing(null); setShowModal(true); }
     function openEdit(n: any) {
-        setForm({ title: n.title || "", date: n.date?.slice(0, 10) || "", excerpt: n.excerpt || "", content: n.content || "", link: n.link || "", image: n.image || "", source: n.source || "" });
+        setForm({
+            title: n.title || "",
+            date: n.date?.slice(0, 10) || "",
+            excerpt: n.excerpt || "",
+            content: n.content || "",
+            link: n.link || "",
+            image: n.image || "",
+            source: n.source || ""
+        });
         setEditing(n); setShowModal(true);
     }
 
     async function save() {
+        if (!form.title || !form.date) return alert("Title and Date are required.");
         setSaving(true);
-        if (editing) await fetch(`/api/news/${editing._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-        else await fetch("/api/news", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-        setSaving(false); setShowModal(false); load();
+        try {
+            if (editing) {
+                await fetch(`/api/news/${editing._id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(form)
+                });
+            } else {
+                await fetch("/api/news", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(form)
+                });
+            }
+            setShowModal(false);
+            load();
+        } catch (err) {
+            alert("Failed to save news.");
+        } finally {
+            setSaving(false);
+        }
     }
 
     async function del(id: string) {
@@ -36,17 +64,25 @@ export default function AdminNews() {
     }
 
     return (
-        <>
+        <div className="admin-container">
             <div className="admin-header">
                 <h1>News & Press</h1>
                 <button className="btn btn--dark" onClick={openNew}>+ Add News</button>
             </div>
+
             <div className="admin-card" style={{ padding: 0 }}>
                 <table className="admin-table">
-                    <thead><tr><th>Title</th><th>Source</th><th>Date</th><th>Actions</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Source</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         {news.length === 0 && (
-                            <tr><td colSpan={4} style={{ textAlign: "center", color: "var(--grey-600)", fontStyle: "italic" }}>No news yet.</td></tr>
+                            <tr><td colSpan={4} style={{ textAlign: "center", padding: "40px", color: "var(--grey-400)" }}>No news articles found.</td></tr>
                         )}
                         {news.map((n) => (
                             <tr key={n._id}>
@@ -74,54 +110,78 @@ export default function AdminNews() {
                         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                             <div className="form-group">
                                 <label className="form-label">Title *</label>
-                                <input className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                                <input className="form-input" value={form.title} onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))} />
                             </div>
                             <div className="form-grid">
                                 <div className="form-group">
                                     <label className="form-label">Date *</label>
-                                    <input className="form-input" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+                                    <input className="form-input" type="date" value={form.date} onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))} />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Source</label>
-                                    <input className="form-input" placeholder="e.g. Artforum, Le Monde..." value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
+                                    <input className="form-input" placeholder="e.g. Artforum, Le Monde..." value={form.source} onChange={(e) => setForm(prev => ({ ...prev, source: e.target.value }))} />
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Link</label>
-                                <input className="form-input" type="url" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} />
+                                <label className="form-label">Link (Optional)</label>
+                                <input className="form-input" type="url" value={form.link} onChange={(e) => setForm(prev => ({ ...prev, link: e.target.value }))} />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Cover Image</label>
-                                {form.image && <img src={form.image} style={{ width: "100%", height: "120px", objectFit: "cover", marginBottom: "8px" }} />}
-                                <input type="file" onChange={async (e) => {
+                                <div style={{ position: "relative", marginBottom: "8px", minHeight: "120px", background: "var(--white-200)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--grey-100)" }}>
+                                    {form.image ? (
+                                        <img src={form.image} style={{ width: "100%", height: "120px", objectFit: "cover" }} />
+                                    ) : (
+                                        <span style={{ fontSize: "0.75rem", color: "var(--grey-400)" }}>No cover image</span>
+                                    )}
+                                    {uploadingTarget === "news-cover" && (
+                                        <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", fontWeight: 600 }}>
+                                            UPLOADING...
+                                        </div>
+                                    )}
+                                </div>
+                                <input type="file" disabled={!!uploadingTarget} onChange={async (e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
+                                        setUploadingTarget("news-cover");
                                         const fd = new FormData();
                                         fd.append("file", file);
                                         fd.append("folder", "news");
-                                        const res = await fetch("/api/upload", { method: "POST", body: fd });
-                                        const data = await res.json();
-                                        if (data.url) setForm({ ...form, image: data.url });
+                                        try {
+                                            const res = await fetch("/api/upload", { method: "POST", body: fd });
+                                            if (!res.ok) throw new Error("Upload failed");
+                                            const data = await res.json();
+                                            if (data.url) {
+                                                setForm(prev => ({ ...prev, image: data.url }));
+                                            }
+                                        } catch (err) {
+                                            alert("Failed to upload image.");
+                                        } finally {
+                                            setUploadingTarget(null);
+                                        }
                                     }
                                 }} />
-                                <input className="form-input" style={{ marginTop: 8, fontSize: "0.75rem" }} placeholder="Or paste URL..." value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Excerpt (Short Summary)</label>
-                                <textarea className="form-textarea" rows={2} value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} />
+                                <label className="form-label">Full Article Content (HTML allowed)</label>
+                                <textarea
+                                    className="form-input"
+                                    rows={10}
+                                    value={form.content}
+                                    placeholder="Write the full article content here..."
+                                    onChange={(e) => setForm(prev => ({ ...prev, content: e.target.value }))}
+                                />
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">Full Article Content (HTML supported)</label>
-                                <textarea className="form-textarea" rows={8} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
-                            </div>
-                            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-                                <button onClick={() => setShowModal(false)} className="btn btn--outline">Cancel</button>
-                                <button onClick={save} disabled={saving} className="btn btn--dark">{saving ? "Saving..." : editing ? "Update" : "Add"}</button>
+                            <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                                <button className="btn btn--dark" style={{ flex: 1 }} onClick={save} disabled={saving || !!uploadingTarget}>
+                                    {saving ? "Saving..." : "Save News Item"}
+                                </button>
+                                <button className="btn btn--outline" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancel</button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 }

@@ -34,6 +34,7 @@ export default function AdminSettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
+    const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
     const isDirty = JSON.stringify(settings) !== JSON.stringify(original);
 
@@ -46,6 +47,17 @@ export default function AdminSettingsPage() {
                 setLoading(false);
             });
     }, []);
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = "";
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [isDirty]);
 
     async function handleSave(e?: React.FormEvent) {
         if (e) e.preventDefault();
@@ -64,7 +76,9 @@ export default function AdminSettingsPage() {
                 setMessage("Settings saved successfully.");
                 setOriginal(settings);
             } else {
-                setMessage(`Error: ${result.error || "Failed to save"}`);
+                const errMsg = result.error || "Failed to save settings.";
+                const details = result.details ? `: ${result.details.join(", ")}` : "";
+                setMessage(`Error: ${errMsg}${details}`);
             }
         } catch (e) {
             console.error("Save error:", e);
@@ -74,6 +88,10 @@ export default function AdminSettingsPage() {
     }
 
     async function uploadFile(file: File, target: "hero" | "extra" | "extra2", index?: number) {
+        const targetKey = index !== undefined ? `${target}-${index}` : target;
+        setUploadingTarget(targetKey);
+        setMessage("");
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append("folder", "settings");
@@ -101,13 +119,16 @@ export default function AdminSettingsPage() {
                 } else if (target === "extra2") {
                     setSettings(prev => prev ? ({ ...prev, homepageExtra2Image: data.url }) : null);
                 }
-                setMessage("Image uploaded! Remember to click 'Save All Changes'.");
+                setMessage("Image uploaded successfully! Please click 'Save All Changes' to persist.");
             } else {
                 throw new Error("No URL in upload response");
             }
         } catch (err: any) {
             console.error("Upload process failed:", err);
+            alert("Upload failed: " + err.message);
             setMessage(`Upload failed: ${err.message}`);
+        } finally {
+            setUploadingTarget(null);
         }
     }
 
@@ -153,8 +174,8 @@ export default function AdminSettingsPage() {
                 <h1 className="admin-title">Site Configuration</h1>
                 <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                     {isDirty && <span style={{ color: "var(--accent-dark)", fontSize: "0.85rem", fontWeight: 600 }}>● Unsaved changes</span>}
-                    <button className="btn btn--dark" onClick={() => handleSave()} disabled={saving || !isDirty}>
-                        {saving ? "Saving..." : "Save All Changes"}
+                    <button className="btn btn--dark" onClick={() => handleSave()} disabled={saving || !isDirty || !!uploadingTarget}>
+                        {saving ? "Saving..." : uploadingTarget ? "Wait for Upload..." : "Save All Changes"}
                     </button>
                 </div>
             </div>
@@ -179,8 +200,8 @@ export default function AdminSettingsPage() {
                         <div style={{ display: "flex", gap: "12px" }}>
                             <button className="btn btn--outline btn--sm" onClick={addSlide}>+ Add Slide</button>
                             {isDirty && (
-                                <button className="btn btn--dark btn--sm" onClick={() => handleSave()} disabled={saving}>
-                                    {saving ? "Saving..." : "Save Now"}
+                                <button className="btn btn--dark btn--sm" onClick={() => handleSave()} disabled={saving || !!uploadingTarget}>
+                                    {saving ? "..." : uploadingTarget ? "wait" : "Save Now"}
                                 </button>
                             )}
                         </div>
@@ -223,9 +244,21 @@ export default function AdminSettingsPage() {
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "24px" }}>
                                     <div>
                                         <label className="form-label">Slide Image</label>
-                                        {slide.img && <img src={slide.img} style={{ width: "100%", height: "120px", objectFit: "cover", marginBottom: "12px" }} />}
+                                        <div style={{ position: "relative", marginBottom: "12px", minHeight: "120px", background: "var(--white-200)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            {slide.img ? (
+                                                <img src={slide.img} style={{ width: "100%", height: "120px", objectFit: "cover" }} />
+                                            ) : (
+                                                <span style={{ fontSize: "0.7rem", color: "var(--grey-400)" }}>No image</span>
+                                            )}
+                                            {uploadingTarget === `hero-${i}` && (
+                                                <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 600 }}>
+                                                    UPLOADING...
+                                                </div>
+                                            )}
+                                        </div>
                                         <input
                                             type="file"
+                                            disabled={!!uploadingTarget}
                                             onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "hero", i)}
                                             style={{ fontSize: "0.7rem" }}
                                         />
@@ -243,7 +276,7 @@ export default function AdminSettingsPage() {
                                         </div>
                                         <div className="form-group">
                                             <label className="form-label">Link URL</label>
-                                            <input className="form-input" value={slide.link} onChange={(e) => updateSlide(i, "link", e.target.value)} />
+                                            <input className="form-input" value={slide.link || ""} onChange={(e) => updateSlide(i, "link", e.target.value)} />
                                         </div>
                                         <div className="form-group" style={{ gridColumn: "span 2" }}>
                                             <label className="form-label">Main Title</label>
@@ -267,17 +300,28 @@ export default function AdminSettingsPage() {
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "24px" }}>
                             <div>
                                 <label className="form-label">Section Image</label>
-                                {settings?.homepageExtraImage && <img src={settings.homepageExtraImage} style={{ width: "100%", height: "150px", objectFit: "cover", marginBottom: "12px" }} />}
-                                <input type="file" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "extra")} />
+                                <div style={{ position: "relative", marginBottom: "12px", minHeight: "150px", background: "var(--white-200)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    {settings?.homepageExtraImage ? (
+                                        <img src={settings.homepageExtraImage} style={{ width: "100%", height: "150px", objectFit: "cover" }} />
+                                    ) : (
+                                        <span style={{ fontSize: "0.7rem", color: "var(--grey-400)" }}>No image</span>
+                                    )}
+                                    {uploadingTarget === "extra" && (
+                                        <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 600 }}>
+                                            UPLOADING...
+                                        </div>
+                                    )}
+                                </div>
+                                <input type="file" disabled={!!uploadingTarget} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "extra")} />
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                                 <div className="form-group">
                                     <label className="form-label">Section Title</label>
-                                    <input className="form-input" value={settings?.homepageExtraTitle} onChange={(e) => setSettings({ ...settings!, homepageExtraTitle: e.target.value })} />
+                                    <input className="form-input" value={settings?.homepageExtraTitle || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, homepageExtraTitle: e.target.value }) : null)} />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Section Content (HTML allowed)</label>
-                                    <textarea className="form-input" rows={4} value={settings?.homepageExtraContent} onChange={(e) => setSettings({ ...settings!, homepageExtraContent: e.target.value })} />
+                                    <textarea className="form-input" rows={4} value={settings?.homepageExtraContent || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, homepageExtraContent: e.target.value }) : null)} />
                                 </div>
                             </div>
                         </div>
@@ -291,17 +335,28 @@ export default function AdminSettingsPage() {
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "24px" }}>
                             <div>
                                 <label className="form-label">Section Image</label>
-                                {settings?.homepageExtra2Image && <img src={settings.homepageExtra2Image} style={{ width: "100%", height: "150px", objectFit: "cover", marginBottom: "12px" }} />}
-                                <input type="file" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "extra2")} />
+                                <div style={{ position: "relative", marginBottom: "12px", minHeight: "150px", background: "var(--white-200)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    {settings?.homepageExtra2Image ? (
+                                        <img src={settings.homepageExtra2Image} style={{ width: "100%", height: "150px", objectFit: "cover" }} />
+                                    ) : (
+                                        <span style={{ fontSize: "0.7rem", color: "var(--grey-400)" }}>No image</span>
+                                    )}
+                                    {uploadingTarget === "extra2" && (
+                                        <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 600 }}>
+                                            UPLOADING...
+                                        </div>
+                                    )}
+                                </div>
+                                <input type="file" disabled={!!uploadingTarget} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "extra2")} />
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                                 <div className="form-group">
                                     <label className="form-label">Section Title</label>
-                                    <input className="form-input" value={settings?.homepageExtra2Title || ""} onChange={(e) => setSettings({ ...settings!, homepageExtra2Title: e.target.value })} />
+                                    <input className="form-input" value={settings?.homepageExtra2Title || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, homepageExtra2Title: e.target.value }) : null)} />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Section Content (HTML allowed)</label>
-                                    <textarea className="form-input" rows={4} value={settings?.homepageExtra2Content || ""} onChange={(e) => setSettings({ ...settings!, homepageExtra2Content: e.target.value })} />
+                                    <textarea className="form-input" rows={4} value={settings?.homepageExtra2Content || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, homepageExtra2Content: e.target.value }) : null)} />
                                 </div>
                             </div>
                         </div>
@@ -314,27 +369,27 @@ export default function AdminSettingsPage() {
                     <div className="card__body" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
                         <div className="form-group">
                             <label className="form-label">Gallery Address</label>
-                            <textarea className="form-input" rows={2} value={settings?.address} onChange={(e) => setSettings({ ...settings!, address: e.target.value })} />
+                            <textarea className="form-input" rows={2} value={settings?.address || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, address: e.target.value }) : null)} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Opening Hours</label>
-                            <textarea className="form-input" rows={2} value={settings?.hours} onChange={(e) => setSettings({ ...settings!, hours: e.target.value })} />
+                            <textarea className="form-input" rows={2} value={settings?.hours || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, hours: e.target.value }) : null)} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">General Email</label>
-                            <input className="form-input" value={settings?.contactEmail} onChange={(e) => setSettings({ ...settings!, contactEmail: e.target.value })} />
+                            <input className="form-input" value={settings?.contactEmail || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, contactEmail: e.target.value }) : null)} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Press Email</label>
-                            <input className="form-input" value={settings?.pressEmail} onChange={(e) => setSettings({ ...settings!, pressEmail: e.target.value })} />
+                            <input className="form-input" value={settings?.pressEmail || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, pressEmail: e.target.value }) : null)} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Phone Label / Number</label>
-                            <input className="form-input" value={settings?.contactPhone} onChange={(e) => setSettings({ ...settings!, contactPhone: e.target.value })} />
+                            <input className="form-input" value={settings?.contactPhone || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, contactPhone: e.target.value }) : null)} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Google Maps Embed URL</label>
-                            <input className="form-input" value={settings?.mapUrl} onChange={(e) => setSettings({ ...settings!, mapUrl: e.target.value })} />
+                            <input className="form-input" value={settings?.mapUrl || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, mapUrl: e.target.value }) : null)} />
                         </div>
                     </div>
                 </section>
@@ -345,15 +400,15 @@ export default function AdminSettingsPage() {
                     <div className="card__body" style={{ display: "grid", gap: "24px" }}>
                         <div className="form-group">
                             <label className="form-label">Gallery Display Name</label>
-                            <input className="form-input" value={settings?.galleryName} onChange={(e) => setSettings({ ...settings!, galleryName: e.target.value })} />
+                            <input className="form-input" value={settings?.galleryName || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, galleryName: e.target.value }) : null)} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Footer Short Description</label>
-                            <textarea className="form-input" rows={3} value={settings?.footerDescription} onChange={(e) => setSettings({ ...settings!, footerDescription: e.target.value })} />
+                            <textarea className="form-input" rows={3} value={settings?.footerDescription || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, footerDescription: e.target.value }) : null)} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Copyright Text</label>
-                            <input className="form-input" value={settings?.footerText} onChange={(e) => setSettings({ ...settings!, footerText: e.target.value })} />
+                            <input className="form-input" value={settings?.footerText || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, footerText: e.target.value }) : null)} />
                         </div>
                     </div>
                 </section>
@@ -361,8 +416,8 @@ export default function AdminSettingsPage() {
             </div>
 
             <div style={{ marginTop: "48px", textAlign: "right" }}>
-                <button className="btn btn--dark" onClick={() => handleSave()} disabled={saving}>
-                    {saving ? "Saving All Changes..." : "Save All Changes"}
+                <button className="btn btn--dark" onClick={() => handleSave()} disabled={saving || !isDirty || !!uploadingTarget}>
+                    {saving ? "Saving All Changes..." : uploadingTarget ? "Wait for Upload..." : "Save All Changes"}
                 </button>
             </div>
         </div>
