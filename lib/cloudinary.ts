@@ -9,12 +9,15 @@ cloudinary.config({
 export async function uploadImage(
     fileBuffer: Buffer,
     folder: string = "nodflo"
-): Promise<string> {
+): Promise<{ url: string; publicId: string }> {
     return new Promise((resolve, reject) => {
         cloudinary.uploader
             .upload_stream({ folder }, (error, result) => {
                 if (error || !result) return reject(error);
-                resolve(result.secure_url);
+                resolve({
+                    url: result.secure_url,
+                    publicId: result.public_id
+                });
             })
             .end(fileBuffer);
     });

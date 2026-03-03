@@ -18,9 +18,14 @@ const OpenCallApplicationSchema = new Schema({
     phone: { type: String },
     website: { type: String },
     portfolioUrl: { type: String },
+    videoLink: { type: String },
     statement: { type: String },
     cv: { type: String },
-    files: [{ type: String }],
+    images: [{
+        url: { type: String },
+        publicId: { type: String }
+    }],
+    agreeToContact: { type: Boolean, default: false },
     status: { type: String, enum: ['pending', 'reviewed', 'accepted', 'rejected'], default: 'pending' },
 }, { timestamps: true });
 

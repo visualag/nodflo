@@ -10,7 +10,6 @@ const sections = [
             { href: "/admin", label: "Dashboard", icon: "◈" },
             { href: "/admin/settings", label: "Settings", icon: "⚙" },
             { href: "/admin/exhibitions", label: "Exhibitions", icon: "◻" },
-            { href: "/admin/artists", label: "Artists", icon: "◈" },
             { href: "/admin/open-calls", label: "Open Calls", icon: "◷" },
             { href: "/admin/news", label: "News", icon: "◈" },
         ],
@@ -18,6 +17,8 @@ const sections = [
     {
         label: "People",
         links: [
+            { href: "/admin/artists", label: "Artists", icon: "◈" },
+            { href: "/admin/artists/database", label: "Artist Database", icon: "👥" },
             { href: "/admin/team", label: "Team", icon: "◈" },
             { href: "/admin/sponsors", label: "Sponsors", icon: "◈" },
         ],
