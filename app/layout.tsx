@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://nodflo.vercel.app"),
   title: {
     default: "NOD FLOW — Contemporary Art Gallery",
     template: "%s | NOD FLOW",

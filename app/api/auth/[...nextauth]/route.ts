@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
-const handler = NextAuth({
+const authOptions = {
     providers: [
         CredentialsProvider({
             name: "credentials",
@@ -18,7 +18,6 @@ const handler = NextAuth({
 
                 if (credentials.email !== adminEmail) return null;
 
-                // Support both plain text (dev) and bcrypt hash (prod)
                 const isValid =
                     credentials.password === adminPassword ||
                     (adminPassword?.startsWith("$2") &&
@@ -30,14 +29,12 @@ const handler = NextAuth({
             },
         }),
     ],
-    session: { strategy: "jwt" },
+    session: { strategy: "jwt" as const },
     pages: { signIn: "/admin/login" },
-    callbacks: {
-        async session({ session, token }) {
-            return session;
-        },
-    },
     secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const handler = NextAuth(authOptions) as any;
 
 export { handler as GET, handler as POST };
