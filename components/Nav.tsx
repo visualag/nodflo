@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,11 +16,11 @@ const DEFAULT_NAV = [
 export default function Nav({ dark = false }: { dark?: boolean }) {
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const [settings, setSettings] = useState<any>(null);
+    const [settings, setSettings] = useState<any>(undefined); // undefined = loading
     const pathname = usePathname();
 
     useEffect(() => {
-        fetch("/api/settings").then(r => r.json()).then(setSettings).catch(() => { });
+        fetch("/api/settings").then(r => r.json()).then(setSettings).catch(() => setSettings(null));
     }, []);
 
     useEffect(() => {
@@ -32,29 +32,32 @@ export default function Nav({ dark = false }: { dark?: boolean }) {
     useEffect(() => { setMenuOpen(false); }, [pathname]);
 
     const isDark = dark && !scrolled;
-    const galleryName = settings?.galleryName || "NOD FLOW";
-    const logoUrl = settings?.logoUrl || "";
-    const navLinks = settings?.navLinks?.length ? settings.navLinks : DEFAULT_NAV;
+    // Only resolve name/logo after settings have loaded (undefined = still loading)
+    const loaded = settings !== undefined;
+    const galleryName = loaded ? (settings?.galleryName || "NOD FLOW") : "";
+    const logoUrl = loaded ? (settings?.logoUrl || "") : "";
+    const navLinks = (loaded && settings?.navLinks?.length) ? settings.navLinks : DEFAULT_NAV;
 
     return (
         <>
             <nav className={`nav ${isDark ? "nav--dark" : ""} ${scrolled ? "nav--scrolled" : ""}`}>
                 <div className="nav__inner">
-                    <Link href="/" className="nav__logo">
-                        {logoUrl
-                            ? <img src={logoUrl} alt={galleryName} style={{ height: 32, objectFit: "contain" }} />
-                            : galleryName
-                        }
+                    <Link href="/" className="nav__logo" style={{ minWidth: 80 }}>
+                        {loaded && (
+                            logoUrl
+                                ? <img src={logoUrl} alt={galleryName} style={{ height: 32, objectFit: "contain" }} />
+                                : galleryName
+                        )}
                     </Link>
                     <div className="nav__links">
                         {navLinks.map((link: any) => (
-                            <div key={link.href} style={{ position: "relative" }} className="nav__link-wrap">
+                            <div key={link.href} className="nav__link-wrap">
                                 <Link
                                     href={link.href}
                                     className={`nav__link ${pathname.startsWith(link.href) ? "nav__link--active" : ""}`}
                                 >
                                     {link.label}
-                                    {link.children?.length > 0 && <span style={{ fontSize: "0.6em", marginLeft: 4 }}>▾</span>}
+                                    {link.children?.length > 0 && <span style={{ fontSize: "0.55em", marginLeft: 3, opacity: 0.6 }}>▾</span>}
                                 </Link>
                                 {link.children?.length > 0 && (
                                     <div className="nav__dropdown">
@@ -84,14 +87,14 @@ export default function Nav({ dark = false }: { dark?: boolean }) {
             {/* Mobile Menu */}
             <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
                 {navLinks.map((link: any) => (
-                    <div key={link.href}>
+                    <React.Fragment key={link.href}>
                         <Link href={link.href} className="mobile-menu__link">{link.label}</Link>
                         {link.children?.map((child: any) => (
                             <Link key={child.href} href={child.href} className="mobile-menu__link" style={{ paddingLeft: 32, fontSize: "0.85rem", opacity: 0.7 }}>
                                 {child.label}
                             </Link>
                         ))}
-                    </div>
+                    </React.Fragment>
                 ))}
             </div>
         </>

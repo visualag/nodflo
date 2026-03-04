@@ -29,12 +29,13 @@ interface SettingsData {
 }
 
 export default function AdminSettingsPage() {
-    const [settings, setSettings] = useState<SettingsData | null>(null);
-    const [original, setOriginal] = useState<SettingsData | null>(null);
+    const [settings, setSettings] = useState<any>(null);
+    const [original, setOriginal] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
     const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
+    const [availablePages, setAvailablePages] = useState<{ label: string; href: string }[]>([]);
 
     const isDirty = JSON.stringify(settings) !== JSON.stringify(original);
 
@@ -46,6 +47,32 @@ export default function AdminSettingsPage() {
                 setOriginal(data);
                 setLoading(false);
             });
+    }, []);
+
+    // Build available pages list for nav link picker
+    useEffect(() => {
+        const staticPages = [
+            { label: "Exhibitions", href: "/exhibitions" },
+            { label: "Exhibitions: Current", href: "/exhibitions?type=current" },
+            { label: "Exhibitions: Upcoming", href: "/exhibitions?type=upcoming" },
+            { label: "Exhibitions: Archive", href: "/exhibitions?type=past" },
+            { label: "Artists", href: "/artists" },
+            { label: "News & Press", href: "/news" },
+            { label: "Team", href: "/team" },
+            { label: "Sponsors", href: "/sponsors" },
+            { label: "Open Calls", href: "/open-calls" },
+            { label: "Contact", href: "/contact" },
+        ];
+        Promise.all([
+            fetch("/api/exhibitions").then(r => r.json()).catch(() => []),
+            fetch("/api/news").then(r => r.json()).catch(() => []),
+            fetch("/api/open-calls").then(r => r.json()).catch(() => []),
+        ]).then(([exhibitions, news, openCalls]) => {
+            const exPages = (Array.isArray(exhibitions) ? exhibitions : []).map((e: any) => ({ label: `Expo: ${e.title}`, href: `/exhibitions/${e.slug}` }));
+            const newsPages = (Array.isArray(news) ? news : []).map((n: any) => ({ label: `News: ${n.title}`, href: `/news/${n._id}` }));
+            const callPages = (Array.isArray(openCalls) ? openCalls : []).map((c: any) => ({ label: `Open Call: ${c.title}`, href: `/open-calls/${c.slug}` }));
+            setAvailablePages([...staticPages, ...exPages, ...newsPages, ...callPages]);
+        });
     }, []);
 
     useEffect(() => {
@@ -65,7 +92,7 @@ export default function AdminSettingsPage() {
         setSaving(true); setMessage("");
         console.log("Attempting to save settings:", settings);
         try {
-            const { _id, __v, ...payload } = settings;
+            const { _id, __v, ...payload } = settings as any;
             const res = await fetch("/api/settings", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -470,12 +497,28 @@ export default function AdminSettingsPage() {
                                             nav[i] = { ...nav[i], label: e.target.value };
                                             setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
                                         }} style={{ flex: 1 }} />
-                                    <input className="form-input" placeholder="URL (ex: /exhibitions)" value={link.href}
-                                        onChange={(e) => {
-                                            const nav = [...((settings as any)?.navLinks || [])];
-                                            nav[i] = { ...nav[i], href: e.target.value };
-                                            setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
-                                        }} style={{ flex: 1 }} />
+                                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+                                        <select
+                                            className="form-input"
+                                            style={{ fontSize: "0.8rem" }}
+                                            value={link.href}
+                                            onChange={(e) => {
+                                                if (!e.target.value) return;
+                                                const nav = [...((settings as any)?.navLinks || [])];
+                                                nav[i] = { ...nav[i], href: e.target.value };
+                                                setSettings((prev: any) => prev ? ({ ...prev, navLinks: nav }) : null);
+                                            }}
+                                        >
+                                            <option value="">— Alege din pagini existente —</option>
+                                            {availablePages.map(p => <option key={p.href} value={p.href}>{p.label} ({p.href})</option>)}
+                                        </select>
+                                        <input className="form-input" placeholder="sau scrie URL manual (ex: /contact#visit)" value={link.href}
+                                            onChange={(e) => {
+                                                const nav = [...((settings as any)?.navLinks || [])];
+                                                nav[i] = { ...nav[i], href: e.target.value };
+                                                setSettings((prev: any) => prev ? ({ ...prev, navLinks: nav }) : null);
+                                            }} style={{ fontSize: "0.8rem" }} />
+                                    </div>
                                     <button type="button" onClick={() => {
                                         const nav = ((settings as any)?.navLinks || []).filter((_: any, j: number) => j !== i);
                                         setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
