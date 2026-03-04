@@ -528,6 +528,17 @@ p {
   opacity: 1;
 }
 
+.artist-detail-link {
+  color: var(--black);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.artist-detail-link:hover {
+  border-bottom-color: var(--black);
+}
+
 .artist-card__name {
   font-family: var(--font-serif);
   font-size: 1.15rem;
