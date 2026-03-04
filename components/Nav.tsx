@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useSettings } from "./SettingsProvider";
+
 const DEFAULT_NAV = [
     { href: "/exhibitions", label: "Exhibitions" },
     { href: "/artists", label: "Artists" },
@@ -16,12 +18,8 @@ const DEFAULT_NAV = [
 export default function Nav({ dark = false }: { dark?: boolean }) {
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const [settings, setSettings] = useState<any>(undefined); // undefined = loading
+    const settings = useSettings();
     const pathname = usePathname();
-
-    useEffect(() => {
-        fetch("/api/settings").then(r => r.json()).then(setSettings).catch(() => setSettings(null));
-    }, []);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 60);

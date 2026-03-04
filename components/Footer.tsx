@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
+import { useSettings } from "./SettingsProvider";
 
 const DEFAULT_FOOTER_COLUMNS = [
     {
@@ -58,11 +59,7 @@ function normalizeUrl(url: string): string {
 }
 
 export default function Footer() {
-    const [settings, setSettings] = useState<any>(null);
-
-    useEffect(() => {
-        fetch("/api/settings").then(r => r.json()).then(setSettings).catch(() => { });
-    }, []);
+    const settings = useSettings();
 
     const name = settings?.galleryName || "NOD FLOW";
     const logoUrl = settings?.logoUrl || "";

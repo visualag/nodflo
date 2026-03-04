@@ -1,51 +1,27 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import NewsletterForm from "@/components/NewsletterForm";
+import dbConnect from "@/lib/db";
+import Exhibition from "@/models/Exhibition";
+import { notFound } from "next/navigation";
+import { ExhibitionDetailClient } from "@/components/ExhibitionDetailClient";
 
-function formatDate(d: string) {
+function formatDate(d: any) {
     if (!d) return "";
     return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
-function getGoogleCalendarUrl(ex: any) {
-    if (!ex) return "";
-    const start = ex.startDate ? new Date(ex.startDate).toISOString().replace(/-|:|\.\d\d\d/g, "") : "";
-    const end = ex.endDate ? new Date(ex.endDate).toISOString().replace(/-|:|\.\d\d\d/g, "") : "";
-    const details = ex.description || "";
-    const locName = ex.location?.name || (typeof ex.location === 'string' ? ex.location : "NOD FLOW Gallery");
-    const locAddr = ex.location?.address ? `, ${ex.location.address}` : "";
-    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ex.title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(locName + locAddr)}`;
-}
+export const dynamic = "force-dynamic";
 
-export default function ExhibitionDetailPage() {
-    const params = useParams();
-    const [exhibition, setExhibition] = useState<any>(null);
-    const [lightbox, setLightbox] = useState<string | null>(null);
+export default async function ExhibitionDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+    await dbConnect();
+    const { slug } = await params;
 
-    useEffect(() => {
-        if (!params.slug) return;
-        fetch(`/api/exhibitions?slug=${params.slug}`)
-            .then((r) => r.json())
-            .then((data) => {
-                setExhibition(data);
-            })
-            .catch(() => { });
-    }, [params.slug]);
+    const exhibition = await Exhibition.findOne({ slug }).populate("artists.artist").lean() as any;
 
     if (!exhibition) {
-        return (
-            <>
-                <Nav />
-                <div style={{ paddingTop: "var(--nav-h)", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <p className="text-muted">Loading...</p>
-                </div>
-                <Footer />
-            </>
-        );
+        return notFound();
     }
 
     const locName = exhibition.location?.name || (typeof exhibition.location === 'string' ? exhibition.location : "NOD FLOW Gallery");
@@ -102,22 +78,8 @@ export default function ExhibitionDetailPage() {
                                 </>
                             )}
 
-                            {/* Image Gallery */}
-                            {exhibition.images?.length > 0 && (
-                                <>
-                                    <hr className="divider" />
-                                    <h3 style={{ fontFamily: "var(--font-serif)", fontWeight: 400, marginBottom: 32 }}>Installation Views</h3>
-                                    <div className="gallery-grid">
-                                        {exhibition.images.map((img: string, i: number) => (
-                                            <img
-                                                key={i} src={img} alt={`View ${i + 1}`}
-                                                className="gallery-img"
-                                                onClick={() => setLightbox(img)}
-                                            />
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                            {/* Image Gallery stays interactive via Client Component */}
+                            <ExhibitionDetailClient images={exhibition.images || []} />
                         </div>
 
                         {/* Sidebar */}
@@ -150,16 +112,7 @@ export default function ExhibitionDetailPage() {
                                         <div style={{ marginBottom: 12 }}>
                                             {formatDate(exhibition.startDate)} — {formatDate(exhibition.endDate)}
                                         </div>
-                                        <a
-                                            href={getGoogleCalendarUrl(exhibition)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn--outline"
-                                            style={{ fontSize: "0.7rem", padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 8 }}
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                            Add to Calendar
-                                        </a>
+                                        <CalendarButton exhibition={exhibition} />
                                     </div>
 
                                     <div>
@@ -185,13 +138,6 @@ export default function ExhibitionDetailPage() {
                 </div>
             </section>
 
-            {lightbox && (
-                <div className="lightbox" onClick={() => setLightbox(null)}>
-                    <button className="lightbox__close" onClick={() => setLightbox(null)}>✕</button>
-                    <img src={lightbox} alt="Full view" onClick={(e) => e.stopPropagation()} />
-                </div>
-            )}
-
             <Footer />
 
             <style jsx>{`
@@ -208,3 +154,5 @@ export default function ExhibitionDetailPage() {
         </>
     );
 }
+
+import { CalendarButton } from "@/components/CalendarButton";

@@ -1,41 +1,13 @@
-"use client";
-import { useState, useEffect } from "react";
 import Link from "next/link";
-// Deployment trigger: 2026-03-04
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import dbConnect from "@/lib/db";
+import Exhibition from "@/models/Exhibition";
+import News from "@/models/News";
+import { OpenCall } from "@/models/OpenCall";
+import Settings from "@/models/Settings";
 
-interface Exhibition {
-  _id: string;
-  title: string;
-  artist: string;
-  type: string;
-  startDate: string;
-  endDate: string;
-  coverImage: string;
-  slug: string;
-}
-
-interface NewsItem {
-  _id: string;
-  title: string;
-  date: string;
-  excerpt: string;
-  image: string;
-  source: string;
-  link: string;
-}
-
-interface OpenCall {
-  _id: string;
-  title: string;
-  deadline: string;
-  slug: string;
-  coverImage?: string;
-  isActive?: boolean;
-}
-
-function formatDate(d: string) {
+function formatDate(d: any) {
   if (!d) return "";
   return new Date(d).toLocaleDateString("en-GB", {
     day: "numeric", month: "long", year: "numeric",
@@ -44,61 +16,24 @@ function formatDate(d: string) {
 
 const KAKI = "#7a7a5a";
 
-interface HeroSlide {
-  img: string; eyebrow: string; title: string; subtitle: string; link?: string;
-}
+export const dynamic = "force-dynamic";
 
-interface SettingsData {
-  heroSlides: HeroSlide[];
-  homepageExtraTitle?: string;
-  homepageExtraContent?: string;
-  homepageExtraImage?: string;
-  homepageExtra2Title?: string;
-  homepageExtra2Content?: string;
-  homepageExtra2Image?: string;
-}
+export default async function HomePage() {
+  await dbConnect();
 
-export default function HomePage() {
-  const [settings, setSettings] = useState<SettingsData | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [exhibitions, setExhibitions] = useState<Exhibition[]>([]);
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [openCalls, setOpenCalls] = useState<OpenCall[]>([]);
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
+  // Fetch all needed data in parallel server-side
+  const [settings, allExhibitions, news, openCalls] = await Promise.all([
+    Settings.findOne({}).lean() as any,
+    Exhibition.find({}).sort({ startDate: -1 }).lean(),
+    News.find({}).sort({ date: -1 }).limit(3).lean(),
+    OpenCall.find({ showOnHomepage: true }).lean()
+  ]);
 
-  useEffect(() => {
-    fetch("/api/settings").then((r) => r.json()).then(setSettings).catch(() => { });
-    fetch("/api/exhibitions").then((r) => r.json()).then(setExhibitions).catch(() => { });
-    fetch("/api/news").then((r) => r.json()).then(setNews).catch(() => { });
-    fetch("/api/open-calls").then((r) => r.json()).then(setOpenCalls).catch(() => { });
-  }, []);
-
-  useEffect(() => {
-    if (!settings?.heroSlides?.length) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((p) => (p + 1) % settings.heroSlides.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [settings]);
-
-  const current = exhibitions.filter((e) => e.type === "current").slice(0, 3);
-  const upcoming = exhibitions.filter((e) => e.type === "upcoming").slice(0, 3);
-  const activeCalls = openCalls.filter((c: any) => c.showOnHomepage);
-
-  async function handleSubscribe(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email) return;
-    await fetch("/api/newsletter", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setSubscribed(true);
-  }
+  const current = allExhibitions.filter((e: any) => e.type === "current").slice(0, 3);
+  const upcoming = allExhibitions.filter((e: any) => e.type === "upcoming").slice(0, 3);
+  const past = allExhibitions.filter((e: any) => e.type === "past").slice(0, 3);
 
   const slides = settings?.heroSlides || [];
-  const slide = slides[currentSlide];
 
   return (
     <>
@@ -106,37 +41,8 @@ export default function HomePage() {
 
       {/* ── Hero ── */}
       <section className="hero">
-        {slide && (
-          <>
-            <img
-              key={currentSlide}
-              src={slide.img}
-              alt="Exhibition"
-              className="hero__img"
-              style={{ animation: "fadeUp 1.2s ease forwards" }}
-            />
-            <div className="hero__content">
-              <div className="hero__eyebrow fade-up">{slide.eyebrow}</div>
-              <h1 className="hero__title fade-up fade-up-delay-1">{slide.title}</h1>
-              <p className="hero__subtitle fade-up fade-up-delay-2">{slide.subtitle}</p>
-              <Link href={slide.link || "/exhibitions"} className="hero__cta fade-up fade-up-delay-3">
-                View More <span>→</span>
-              </Link>
-            </div>
-          </>
-        )}
-        <div className="hero__indicators">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              className={`hero__dot ${i === currentSlide ? "active" : ""}`}
-              onClick={() => setCurrentSlide(i)}
-              aria-label={`Slide ${i + 1}`}
-            />
-          ))}
-        </div>
+        {slides.length > 0 && <HeroLoader slides={slides} />}
       </section>
-
 
       {/* ── Current Exhibitions ── */}
       <section className="section">
@@ -153,8 +59,8 @@ export default function HomePage() {
             </p>
           ) : (
             <div className="exhibition-grid">
-              {current.map((ex) => (
-                <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
+              {current.map((ex: any) => (
+                <Link href={`/exhibitions/${ex.slug}`} key={ex._id.toString()} className="exhibition-card">
                   <div className="exhibition-card__img-wrap" style={{ background: KAKI }}>
                     {ex.coverImage && <img src={ex.coverImage} alt={ex.title} className="exhibition-card__img" />}
                   </div>
@@ -172,8 +78,8 @@ export default function HomePage() {
       </section>
 
       {/* ── Open Call Banners ── */}
-      {activeCalls.map((activeCall: any) => (
-        <section key={activeCall._id} className="open-call-banner" style={{ background: activeCall.coverImage ? `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${activeCall.coverImage}) center/cover no-repeat` : KAKI }}>
+      {openCalls.map((activeCall: any) => (
+        <section key={activeCall._id.toString()} className="open-call-banner" style={{ background: activeCall.coverImage ? `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${activeCall.coverImage}) center/cover no-repeat` : KAKI }}>
           <div className="container">
             <div className="open-call-banner__inner">
               <div style={{ color: "white" }}>
@@ -204,8 +110,8 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="exhibition-grid">
-              {upcoming.map((ex) => (
-                <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
+              {upcoming.map((ex: any) => (
+                <Link href={`/exhibitions/${ex.slug}`} key={ex._id.toString()} className="exhibition-card">
                   <div className="exhibition-card__img-wrap" style={{ background: KAKI }}>
                     {ex.coverImage && <img src={ex.coverImage} alt={ex.title} className="exhibition-card__img" />}
                   </div>
@@ -235,8 +141,8 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="news-grid">
-              {news.slice(0, 3).map((item) => (
-                <a key={item._id} href={item.link || "#"} target="_blank" rel="noopener noreferrer" className="news-card">
+              {news.map((item: any) => (
+                <a key={item._id.toString()} href={item.link || "#"} target="_blank" rel="noopener noreferrer" className="news-card">
                   {item.image && (
                     <div className="news-card__img-wrap">
                       <img src={item.image} alt={item.title} className="news-card__img" />
@@ -252,8 +158,8 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Archive (Past Exhibitions) ── */}
-      {exhibitions.filter(e => e.type === "past").length > 0 && (
+      {/* ── Archive ── */}
+      {past.length > 0 && (
         <section className="section" style={{ borderTop: "1px solid var(--grey-100)" }}>
           <div className="container">
             <div className="section-head">
@@ -263,8 +169,8 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="exhibition-grid">
-              {exhibitions.filter(e => e.type === "past").slice(0, 3).map((ex) => (
-                <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
+              {past.map((ex: any) => (
+                <Link href={`/exhibitions/${ex.slug}`} key={ex._id.toString()} className="exhibition-card">
                   <div className="exhibition-card__img-wrap" style={{ background: KAKI }}>
                     {ex.coverImage && <img src={ex.coverImage} alt={ex.title} className="exhibition-card__img" />}
                   </div>
@@ -281,8 +187,8 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Homepage Extra Section ── */}
-      {settings?.homepageExtraContent && settings.homepageExtraContent.trim() !== "" && (
+      {/* ── Homepage Extras ── */}
+      {settings?.homepageExtraContent && (
         <section className="section" style={{ background: "var(--cream)" }}>
           <div className="container">
             <div style={{ display: "grid", gridTemplateColumns: settings.homepageExtraImage ? "1fr 1fr" : "1fr", gap: 64, alignItems: "center" }}>
@@ -293,29 +199,20 @@ export default function HomePage() {
               )}
               <div className="fade-up">
                 {settings.homepageExtraTitle && <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "2.5rem", fontWeight: 400, marginBottom: 32 }}>{settings.homepageExtraTitle}</h2>}
-                <div
-                  className="rich-text"
-                  dangerouslySetInnerHTML={{ __html: settings.homepageExtraContent }}
-                  style={{ lineHeight: 1.8, color: "var(--grey-600)" }}
-                />
+                <div className="rich-text" dangerouslySetInnerHTML={{ __html: settings.homepageExtraContent }} style={{ lineHeight: 1.8, color: "var(--grey-600)" }} />
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* ── Homepage Extra Section 2 ── */}
-      {settings?.homepageExtra2Content && settings.homepageExtra2Content.trim() !== "" && (
+      {settings?.homepageExtra2Content && (
         <section className="section">
           <div className="container">
             <div style={{ display: "grid", gridTemplateColumns: settings.homepageExtra2Image ? "1fr 1fr" : "1fr", gap: 64, alignItems: "center" }}>
               <div className="fade-up" style={{ order: settings.homepageExtra2Image ? 2 : 1 }}>
                 {settings.homepageExtra2Title && <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "2.5rem", fontWeight: 400, marginBottom: 32 }}>{settings.homepageExtra2Title}</h2>}
-                <div
-                  className="rich-text"
-                  dangerouslySetInnerHTML={{ __html: settings.homepageExtra2Content }}
-                  style={{ lineHeight: 1.8, color: "var(--grey-600)" }}
-                />
+                <div className="rich-text" dangerouslySetInnerHTML={{ __html: settings.homepageExtra2Content }} style={{ lineHeight: 1.8, color: "var(--grey-600)" }} />
               </div>
               {settings.homepageExtra2Image && (
                 <div className="fade-up" style={{ order: 1 }}>
@@ -327,36 +224,12 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Newsletter ── */}
-      <section className="newsletter-strip">
-        <div className="container">
-          <div className="newsletter-strip__inner">
-            <div className="newsletter-strip__text">
-              <h2>Stay informed</h2>
-              <p>Receive invitations to openings, news, and calls for artists.</p>
-            </div>
-            {subscribed ? (
-              <p style={{ color: "var(--accent)", fontSize: "0.9rem", fontStyle: "italic" }}>
-                Thank you for subscribing.
-              </p>
-            ) : (
-              <form className="newsletter-form" onSubmit={handleSubscribe}>
-                <input
-                  type="email"
-                  placeholder="Your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  id="newsletter-email"
-                />
-                <button type="submit">Subscribe</button>
-              </form>
-            )}
-          </div>
-        </div>
-      </section>
-
+      <NewsletterStrip />
       <Footer />
     </>
   );
 }
+
+// Client Component for Hero to handle state
+import { HeroLoader } from "@/components/HeroLoader";
+import { NewsletterStrip } from "@/components/NewsletterStrip";

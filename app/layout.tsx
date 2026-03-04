@@ -1,6 +1,9 @@
-// Deployment trigger: 2026-03-04T19:59
+// Deployment trigger: 2026-03-04T21:45
 import type { Metadata } from "next";
 import "./globals.css";
+import dbConnect from "@/lib/db";
+import Settings from "@/models/Settings";
+import { SettingsProvider } from "@/components/SettingsProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || "https://nodflo.vercel.app"),
@@ -20,18 +23,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await dbConnect();
+  const settings = await Settings.findOne({}).lean() as any;
+
   return (
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body>{children}</body>
+      <body>
+        <SettingsProvider settings={settings}>
+          {children}
+        </SettingsProvider>
+      </body>
     </html>
   );
 }
