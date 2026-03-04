@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+// Deployment trigger: 2026-03-04
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 
