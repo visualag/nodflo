@@ -27,17 +27,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ArtistsPage() {
     await dbConnect();
-    // Use aggregation to sort by membership hierarchy
+    // Use aggregation to sort by membership hierarchy (Case-insensitive)
     const artists = await Artist.aggregate([
         {
             $addFields: {
                 membershipRank: {
                     $switch: {
                         branches: [
-                            { case: { $eq: ["$membership", "Platinum"] }, then: 1 },
-                            { case: { $eq: ["$membership", "Gold"] }, then: 2 },
-                            { case: { $eq: ["$membership", "Silver"] }, then: 3 },
-                            { case: { $eq: ["$membership", "Bronze"] }, then: 4 }
+                            { case: { $eq: [{ $toLower: "$membership" }, "platinum"] }, then: 1 },
+                            { case: { $eq: [{ $toLower: "$membership" }, "gold"] }, then: 2 },
+                            { case: { $eq: [{ $toLower: "$membership" }, "silver"] }, then: 3 },
+                            { case: { $eq: [{ $toLower: "$membership" }, "bronze"] }, then: 4 }
                         ],
                         default: 5
                     }
