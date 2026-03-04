@@ -19,32 +19,36 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-    await dbConnect();
-    const { slug } = await params;
-    const exhibition = await Exhibition.findOne({ slug }).lean() as any;
+    try {
+        await dbConnect();
+        const { slug } = await params;
+        const exhibition = await Exhibition.findOne({ slug }).lean() as any;
 
-    if (!exhibition) return { title: "Exhibition Not Found | NOD FLOW" };
+        if (!exhibition) return { title: "Exhibition Not Found | NOD FLOW" };
 
-    const title = exhibition.seoTitle || `${exhibition.title} | NOD FLOW`;
-    const description = exhibition.seoDescription || exhibition.description?.slice(0, 160) || "Exhibition at NOD FLOW Gallery.";
-    const ogImage = exhibition.ogImage || exhibition.coverImage || "https://nodflo.com/og-default.jpg";
+        const title = exhibition.seoTitle || `${exhibition.title} | NOD FLOW`;
+        const description = exhibition.seoDescription || exhibition.description?.slice(0, 160) || "Exhibition at NOD FLOW Gallery.";
+        const ogImage = exhibition.ogImage || exhibition.coverImage || "https://nodflo.com/og-default.jpg";
 
-    return {
-        title,
-        description,
-        openGraph: {
+        return {
             title,
             description,
-            images: [ogImage],
-            type: "article",
-        },
-        twitter: {
-            card: "summary_large_image",
-            title,
-            description,
-            images: [ogImage],
-        }
-    };
+            openGraph: {
+                title,
+                description,
+                images: [ogImage],
+                type: "article",
+            },
+            twitter: {
+                card: "summary_large_image",
+                title,
+                description,
+                images: [ogImage],
+            }
+        };
+    } catch (err: any) {
+        return { title: `Error: ${err.message}` };
+    }
 }
 
 export default async function ExhibitionDetailPage({ params }: { params: Promise<{ slug: string }> }) {
