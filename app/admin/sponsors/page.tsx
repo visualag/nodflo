@@ -25,7 +25,7 @@ export default function AdminSponsors() {
     async function save() {
         setSaving(true);
         try {
-            const { _id, ...payload } = form;
+            const { _id, __v, ...payload } = form;
             const res = await fetch(editing ? `/api/sponsors/${editing._id}` : "/api/sponsors", {
                 method: editing ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
@@ -102,7 +102,20 @@ export default function AdminSponsors() {
                             <div className="form-group">
                                 <label className="form-label">Logo</label>
                                 <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                                    {form.logo && <img src={form.logo} style={{ height: 40, objectFit: "contain", borderRadius: 2 }} />}
+                                    {form.logo ? (
+                                        <div style={{ position: "relative" }}>
+                                            <img src={form.logo} style={{ height: 40, objectFit: "contain", borderRadius: 2 }} />
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm({ ...form, logo: "" })}
+                                                style={{ position: "absolute", top: -8, right: -8, background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer" }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{ width: 60, height: 40, background: "#eee", borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#999" }}>No Logo</div>
+                                    )}
                                     <div style={{ flex: 1 }}>
                                         <input type="file" onChange={async (e) => {
                                             const file = e.target.files?.[0];

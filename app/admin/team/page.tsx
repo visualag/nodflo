@@ -29,7 +29,7 @@ export default function AdminTeam() {
     async function save() {
         setSaving(true);
         try {
-            const { _id, ...payload } = form;
+            const { _id, __v, ...payload } = form;
             const res = await fetch(editing ? `/api/team/${editing._id}` : "/api/team", {
                 method: editing ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
@@ -127,7 +127,20 @@ export default function AdminTeam() {
                             <div className="form-group">
                                 <label className="form-label">Photo</label>
                                 <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                                    {form.photo && <img src={form.photo} style={{ width: 60, height: 80, objectFit: "cover", borderRadius: 2 }} />}
+                                    {form.photo ? (
+                                        <div style={{ position: "relative" }}>
+                                            <img src={form.photo} style={{ width: 60, height: 80, objectFit: "cover", borderRadius: 2 }} />
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm({ ...form, photo: "" })}
+                                                style={{ position: "absolute", top: -8, right: -8, background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer" }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{ width: 60, height: 80, background: "#eee", borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#999" }}>No Photo</div>
+                                    )}
                                     <div style={{ flex: 1 }}>
                                         <input type="file" onChange={async (e) => {
                                             const file = e.target.files?.[0];

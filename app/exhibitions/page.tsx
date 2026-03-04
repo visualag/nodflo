@@ -15,7 +15,7 @@ function formatDate(d: string) {
     return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
-const FALLBACK = "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=900&q=80";
+const FALLBACK = "https://images.unsplash.com/photo-1557683311-eac922347aa1?w=900&q=80"; // Neutral grey gradient
 const TYPES = ["all", "current", "upcoming", "past"];
 
 function ExhibitionsContent() {

@@ -39,7 +39,7 @@ export default function AdminExhibitions() {
     async function save() {
         setSaving(true);
         try {
-            const { _id, ...cleanForm } = form as any;
+            const { _id, __v, ...cleanForm } = form as any;
             const payload = { ...cleanForm, slug: form.slug || slugify(form.title) };
             const res = await fetch(editing ? `/api/exhibitions/${editing._id}` : "/api/exhibitions", {
                 method: editing ? "PUT" : "POST",
@@ -153,7 +153,20 @@ export default function AdminExhibitions() {
                             <div className="form-group">
                                 <label className="form-label">Cover Image</label>
                                 <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                                    {form.coverImage && <img src={form.coverImage} style={{ width: 100, height: 60, objectFit: "cover", borderRadius: 2 }} />}
+                                    {form.coverImage ? (
+                                        <div style={{ position: "relative" }}>
+                                            <img src={form.coverImage} style={{ width: 100, height: 60, objectFit: "cover", borderRadius: 2 }} />
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm({ ...form, coverImage: "" })}
+                                                style={{ position: "absolute", top: -8, right: -8, background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer" }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{ width: 100, height: 60, background: "#eee", borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#999" }}>No Cover</div>
+                                    )}
                                     <div style={{ flex: 1 }}>
                                         <input type="file" onChange={async (e) => {
                                             const file = e.target.files?.[0];

@@ -127,7 +127,16 @@ export default function AdminNews() {
                                 <label className="form-label">Cover Image</label>
                                 <div style={{ position: "relative", marginBottom: "8px", minHeight: "120px", background: "var(--white-200)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--grey-100)" }}>
                                     {form.image ? (
-                                        <img src={form.image} style={{ width: "100%", height: "120px", objectFit: "cover" }} />
+                                        <>
+                                            <img src={form.image} style={{ width: "100%", height: "120px", objectFit: "cover" }} />
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm(prev => ({ ...prev, image: "" }))}
+                                                style={{ position: "absolute", top: 8, right: 8, background: "#ef4444", color: "white", border: "none", borderRadius: "2px", padding: "4px 8px", fontSize: "0.6rem", cursor: "pointer" }}
+                                            >
+                                                REMOVE
+                                            </button>
+                                        </>
                                     ) : (
                                         <span style={{ fontSize: "0.75rem", color: "var(--grey-400)" }}>No cover image</span>
                                     )}
