@@ -27,25 +27,25 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ArtistsPage() {
     await dbConnect();
-    // Use aggregation to sort by membership hierarchy (Case-insensitive)
-    const artists = await Artist.aggregate([
-        {
-            $addFields: {
-                membershipRank: {
-                    $switch: {
-                        branches: [
-                            { case: { $eq: [{ $toLower: "$membership" }, "platinum"] }, then: 1 },
-                            { case: { $eq: [{ $toLower: "$membership" }, "gold"] }, then: 2 },
-                            { case: { $eq: [{ $toLower: "$membership" }, "silver"] }, then: 3 },
-                            { case: { $eq: [{ $toLower: "$membership" }, "bronze"] }, then: 4 }
-                        ],
-                        default: 5
-                    }
-                }
-            }
-        },
-        { $sort: { membershipRank: 1, order: 1, name: 1 } }
-    ]);
+    // Fetch all artists and sort them purely in Javascript for absolute reliability
+    const artistsRaw = await Artist.find({}).lean();
+
+    const getRank = (membership: string) => {
+        const m = membership?.toLowerCase() || "";
+        if (m === "platinum") return 1;
+        if (m === "gold") return 2;
+        if (m === "silver") return 3;
+        if (m === "bronze") return 4;
+        return 5;
+    };
+
+    const artists = artistsRaw.sort((a: any, b: any) => {
+        const rankA = getRank(a.membership);
+        const rankB = getRank(b.membership);
+        if (rankA !== rankB) return rankA - rankB;
+        if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
+        return (a.name || "").localeCompare(b.name || "");
+    });
 
     const cms = await PageContent.findOne({ slug: "artists" }).lean() as any;
 

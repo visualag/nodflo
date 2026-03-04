@@ -56,11 +56,21 @@ export default async function ExhibitionDetailPage({ params }: { params: Promise
         await dbConnect();
         const { slug } = await params;
 
-        const exhibitionDoc = await Exhibition.findOne({ slug }).populate("artists.artist").lean();
+        const exhibitionDoc = await Exhibition.findOne({ slug }).lean() as any;
 
         if (!exhibitionDoc) {
             return notFound();
         }
+
+        // Manually hydrate Artists to prevent Vercel Serverless MissingSchemaError crashes
+        // This is 100% resilient to deleted references and execution order bugs.
+        const artistIds = exhibitionDoc.artists?.map((a: any) => a.artist).filter(Boolean) || [];
+        const populatedArtists = artistIds.length > 0 ? await Artist.find({ _id: { $in: artistIds } }).lean() : [];
+
+        exhibitionDoc.artists = exhibitionDoc.artists?.map((a: any) => ({
+            ...a,
+            artist: populatedArtists.find((pa: any) => pa._id.toString() === a.artist?.toString()) || null
+        }));
 
         // SANITIZE DATA FOR CLIENT COMPONENTS
         // Never pass the raw lean() object directly if it contains Mongoose internals or non-serializable types.
