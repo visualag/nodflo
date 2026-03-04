@@ -30,6 +30,8 @@ interface OpenCall {
   title: string;
   deadline: string;
   slug: string;
+  coverImage?: string;
+  isActive?: boolean;
 }
 
 function formatDate(d: string) {
@@ -39,7 +41,7 @@ function formatDate(d: string) {
   });
 }
 
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1541944743827-e04bb645d993?w=900&q=80"; // Neutral abstract architecture/studio
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=900&q=80"; // Premium abstract art fallback
 
 interface HeroSlide {
   img: string; eyebrow: string; title: string; subtitle: string; link?: string;
@@ -47,6 +49,12 @@ interface HeroSlide {
 
 interface SettingsData {
   heroSlides: HeroSlide[];
+  homepageExtraTitle?: string;
+  homepageExtraContent?: string;
+  homepageExtraImage?: string;
+  homepageExtra2Title?: string;
+  homepageExtra2Content?: string;
+  homepageExtra2Image?: string;
 }
 
 export default function HomePage() {
@@ -168,19 +176,19 @@ export default function HomePage() {
 
       {/* ── Open Call Banner ── */}
       {activeCall && (
-        <section className="open-call-banner">
+        <section className="open-call-banner" style={{ background: activeCall.coverImage ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${activeCall.coverImage}) center/cover no-repeat` : "var(--cream)" }}>
           <div className="container">
             <div className="open-call-banner__inner">
-              <div>
-                <div className="open-call-banner__label">Open Call</div>
+              <div style={{ color: activeCall.coverImage ? "white" : "inherit" }}>
+                <div className="open-call-banner__label" style={{ background: activeCall.coverImage ? "white" : "var(--dark)", color: activeCall.coverImage ? "var(--dark)" : "white" }}>Open Call</div>
                 <div className="open-call-banner__title">{activeCall.title}</div>
                 {activeCall.deadline && (
-                  <p style={{ marginTop: 8, fontSize: "0.8rem", opacity: 0.7 }}>
+                  <p style={{ marginTop: 8, fontSize: "0.8rem", opacity: 0.8 }}>
                     Deadline: {formatDate(activeCall.deadline)}
                   </p>
                 )}
               </div>
-              <Link href={`/open-calls/${activeCall.slug}`} className="btn btn--dark">
+              <Link href={`/open-calls/${activeCall.slug}`} className="btn btn--dark" style={{ background: activeCall.coverImage ? "white" : "var(--dark)", color: activeCall.coverImage ? "var(--dark)" : "white", border: "none" }}>
                 Apply Now →
               </Link>
             </div>
@@ -252,20 +260,20 @@ export default function HomePage() {
       )}
 
       {/* ── Homepage Extra Section ── */}
-      {(settings as any)?.homepageExtraContent && (
+      {settings?.homepageExtraContent && settings.homepageExtraContent.trim() !== "" && (
         <section className="section" style={{ background: "var(--cream)" }}>
           <div className="container">
-            <div style={{ display: "grid", gridTemplateColumns: (settings as any).homepageExtraImage ? "1fr 1fr" : "1fr", gap: 64, alignItems: "center" }}>
-              {(settings as any).homepageExtraImage && (
+            <div style={{ display: "grid", gridTemplateColumns: settings.homepageExtraImage ? "1fr 1fr" : "1fr", gap: 64, alignItems: "center" }}>
+              {settings.homepageExtraImage && (
                 <div className="fade-up">
-                  <img src={(settings as any).homepageExtraImage} alt={(settings as any).homepageExtraTitle} style={{ width: "100%", height: "auto" }} />
+                  <img src={settings.homepageExtraImage} alt={settings.homepageExtraTitle} style={{ width: "100%", height: "auto" }} />
                 </div>
               )}
               <div className="fade-up">
-                {(settings as any).homepageExtraTitle && <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "2.5rem", fontWeight: 400, marginBottom: 32 }}>{(settings as any).homepageExtraTitle}</h2>}
+                {settings.homepageExtraTitle && <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "2.5rem", fontWeight: 400, marginBottom: 32 }}>{settings.homepageExtraTitle}</h2>}
                 <div
                   className="rich-text"
-                  dangerouslySetInnerHTML={{ __html: (settings as any).homepageExtraContent }}
+                  dangerouslySetInnerHTML={{ __html: settings.homepageExtraContent }}
                   style={{ lineHeight: 1.8, color: "var(--grey-600)" }}
                 />
               </div>
@@ -275,21 +283,21 @@ export default function HomePage() {
       )}
 
       {/* ── Homepage Extra Section 2 ── */}
-      {(settings as any)?.homepageExtra2Content && (
+      {settings?.homepageExtra2Content && settings.homepageExtra2Content.trim() !== "" && (
         <section className="section">
           <div className="container">
-            <div style={{ display: "grid", gridTemplateColumns: (settings as any).homepageExtra2Image ? "1fr 1fr" : "1fr", gap: 64, alignItems: "center" }}>
-              <div className="fade-up" style={{ order: (settings as any).homepageExtra2Image ? 2 : 1 }}>
-                {(settings as any).homepageExtra2Title && <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "2.5rem", fontWeight: 400, marginBottom: 32 }}>{(settings as any).homepageExtra2Title}</h2>}
+            <div style={{ display: "grid", gridTemplateColumns: settings.homepageExtra2Image ? "1fr 1fr" : "1fr", gap: 64, alignItems: "center" }}>
+              <div className="fade-up" style={{ order: settings.homepageExtra2Image ? 2 : 1 }}>
+                {settings.homepageExtra2Title && <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "2.5rem", fontWeight: 400, marginBottom: 32 }}>{settings.homepageExtra2Title}</h2>}
                 <div
                   className="rich-text"
-                  dangerouslySetInnerHTML={{ __html: (settings as any).homepageExtra2Content }}
+                  dangerouslySetInnerHTML={{ __html: settings.homepageExtra2Content }}
                   style={{ lineHeight: 1.8, color: "var(--grey-600)" }}
                 />
               </div>
-              {(settings as any).homepageExtra2Image && (
+              {settings.homepageExtra2Image && (
                 <div className="fade-up" style={{ order: 1 }}>
-                  <img src={(settings as any).homepageExtra2Image} alt={(settings as any).homepageExtra2Title} style={{ width: "100%", height: "auto" }} />
+                  <img src={settings.homepageExtra2Image} alt={settings.homepageExtra2Title} style={{ width: "100%", height: "auto" }} />
                 </div>
               )}
             </div>

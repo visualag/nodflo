@@ -1,28 +1,50 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import dbConnect from "@/lib/db";
 import Exhibition from "@/models/Exhibition";
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     await dbConnect();
-    const exhibition = await Exhibition.findById(params.id);
+    const exhibition = await Exhibition.findById(id);
     if (!exhibition) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(exhibition);
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const session = await getServerSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await dbConnect();
-    const { _id, __v, ...data } = await req.json();
-    const exhibition = await Exhibition.findByIdAndUpdate(params.id, data, { new: true });
-    return NextResponse.json(exhibition);
+
+    try {
+        const body = await req.json();
+        console.log("PUT /api/exhibitions/" + id + " received:", JSON.stringify(body, null, 2));
+        const { _id, __v, ...data } = body;
+
+        const exhibition = await Exhibition.findById(id);
+        if (!exhibition) {
+            console.log("Exhibition not found for ID:", id);
+            return NextResponse.json({ error: "Exhibition not found" }, { status: 404 });
+        }
+
+        Object.assign(exhibition, data);
+        await exhibition.save();
+
+        console.log("Update successful for exhibition:", exhibition.title);
+        return NextResponse.json(exhibition);
+    } catch (err: any) {
+        console.error("PUT /api/exhibitions error:", err);
+        return NextResponse.json({ error: err.message, stack: err.stack }, { status: 500 });
+    }
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const session = await getServerSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await dbConnect();
-    await Exhibition.findByIdAndDelete(params.id);
+    await Exhibition.findByIdAndDelete(id);
     return NextResponse.json({ success: true });
 }

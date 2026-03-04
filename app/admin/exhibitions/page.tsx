@@ -19,7 +19,7 @@ export default function AdminExhibitions() {
     const [saving, setSaving] = useState(false);
 
     async function load() {
-        const data = await fetch("/api/exhibitions").then((r) => r.json());
+        const data = await fetch(`/api/exhibitions?v=${Date.now()}`, { cache: "no-store" }).then((r) => r.json());
         setExhibitions(Array.isArray(data) ? data : []);
     }
     useEffect(() => { load(); }, []);

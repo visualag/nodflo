@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Settings from '@/models/Settings';
@@ -58,6 +59,7 @@ export async function PUT(req: Request) {
         console.error("PUT /api/settings - ERROR:", error.message);
         return NextResponse.json({
             error: error.message || 'Failed to update settings',
+            stack: error.stack,
             details: error.errors ? Object.keys(error.errors).map(k => error.errors[k].message) : []
         }, { status: 500 });
     }

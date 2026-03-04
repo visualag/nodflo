@@ -3,6 +3,10 @@ import { useState, useEffect } from "react";
 
 const EMPTY = { title: "", date: "", excerpt: "", content: "", link: "", image: "", source: "" };
 
+function slugify(s: string) {
+    return s.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
 export default function AdminNews() {
     const [news, setNews] = useState<any[]>([]);
     const [showModal, setShowModal] = useState(false);
@@ -12,7 +16,7 @@ export default function AdminNews() {
     const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
     async function load() {
-        const data = await fetch("/api/news").then((r) => r.json());
+        const data = await fetch(`/api/news?v=${Date.now()}`, { cache: "no-store" }).then((r) => r.json());
         setNews(Array.isArray(data) ? data : []);
     }
     useEffect(() => { load(); }, []);
@@ -107,21 +111,21 @@ export default function AdminNews() {
                         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                             <div className="form-group">
                                 <label className="form-label">Title *</label>
-                                <input className="form-input" value={form.title} onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))} />
+                                <input className="form-input" value={form.title} onChange={(e) => setForm((prev: any) => ({ ...prev, title: e.target.value, slug: slugify(e.target.value) }))} />
                             </div>
                             <div className="form-grid">
                                 <div className="form-group">
                                     <label className="form-label">Date *</label>
-                                    <input className="form-input" type="date" value={form.date} onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))} />
+                                    <input className="form-input" type="date" value={form.date} onChange={(e) => setForm((prev: any) => ({ ...prev, date: e.target.value }))} />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Source</label>
-                                    <input className="form-input" placeholder="e.g. Artforum, Le Monde..." value={form.source} onChange={(e) => setForm(prev => ({ ...prev, source: e.target.value }))} />
+                                    <input className="form-input" placeholder="e.g. Artforum, Le Monde..." value={form.source} onChange={(e) => setForm((prev: any) => ({ ...prev, source: e.target.value }))} />
                                 </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Link (Optional)</label>
-                                <input className="form-input" type="url" value={form.link} onChange={(e) => setForm(prev => ({ ...prev, link: e.target.value }))} />
+                                <input className="form-input" type="url" value={form.link} onChange={(e) => setForm((prev: any) => ({ ...prev, link: e.target.value }))} />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Cover Image</label>
@@ -161,7 +165,7 @@ export default function AdminNews() {
                                             if (!res.ok) throw new Error("Upload failed");
                                             const data = await res.json();
                                             if (data.url) {
-                                                setForm(prev => ({ ...prev, image: data.url }));
+                                                setForm((prev: any) => ({ ...prev, image: data.url }));
                                             }
                                         } catch (err) {
                                             alert("Failed to upload image.");
@@ -178,7 +182,7 @@ export default function AdminNews() {
                                     rows={10}
                                     value={form.content}
                                     placeholder="Write the full article content here..."
-                                    onChange={(e) => setForm(prev => ({ ...prev, content: e.target.value }))}
+                                    onChange={(e) => setForm((prev: any) => ({ ...prev, content: e.target.value }))}
                                 />
                             </div>
                             <div style={{ display: "flex", gap: 12, marginTop: 10 }}>

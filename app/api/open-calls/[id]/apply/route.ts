@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import { OpenCallApplication, OpenCall } from "@/models/OpenCall";
 import ArtistContact from "@/models/ArtistContact";
-import { uploadImage } from "@/lib/cloudinary";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     await dbConnect();
 
     try {
         const formData = await req.formData();
-        const call = await OpenCall.findById(params.id);
+        const call = await OpenCall.findById(id);
 
         if (!call || !call.isActive) {
             return NextResponse.json({ error: "This open call is not active" }, { status: 400 });
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         const { put } = await import("@vercel/blob");
 
         for (const file of imageFiles.slice(0, 5)) {
-            const blob = await put(`open-calls/${params.id}/${file.name}`, file, {
+            const blob = await put(`open-calls/${id}/${file.name}`, file, {
                 access: 'public',
             });
             uploadedImages.push({ url: blob.url, publicId: blob.pathname });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
         // 1. Save Application
         const application = await OpenCallApplication.create({
-            callId: params.id,
+            callId: id,
             callTitle: call.title,
             artistName,
             email,
@@ -70,11 +70,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 }
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const session = await (await import("next-auth")).getServerSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await dbConnect();
-    const applications = await OpenCallApplication.find({ callId: params.id }).sort({ createdAt: -1 });
+    const applications = await OpenCallApplication.find({ callId: id }).sort({ createdAt: -1 });
     return NextResponse.json(applications);
 }

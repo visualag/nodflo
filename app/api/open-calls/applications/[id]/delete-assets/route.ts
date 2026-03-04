@@ -10,14 +10,15 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function POST(_: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const session = await getServerSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await dbConnect();
 
     try {
-        const application = await OpenCallApplication.findById(params.id);
+        const application = await OpenCallApplication.findById(id);
         if (!application) {
             return NextResponse.json({ error: "Application not found" }, { status: 404 });
         }

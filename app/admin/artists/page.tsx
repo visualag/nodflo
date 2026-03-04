@@ -15,7 +15,7 @@ export default function AdminArtists() {
     const [saving, setSaving] = useState(false);
 
     async function load() {
-        const data = await fetch("/api/artists", { cache: "no-store" }).then((r) => r.json());
+        const data = await fetch(`/api/artists?v=${Date.now()}`, { cache: "no-store" }).then((r) => r.json());
         setArtists(Array.isArray(data) ? data : []);
     }
     useEffect(() => { load(); }, []);

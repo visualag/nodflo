@@ -11,7 +11,7 @@ export default function AdminSponsors() {
     const [saving, setSaving] = useState(false);
 
     async function load() {
-        const data = await fetch("/api/sponsors").then((r) => r.json());
+        const data = await fetch(`/api/sponsors?v=${Date.now()}`, { cache: "no-store" }).then((r) => r.json());
         setSponsors(Array.isArray(data) ? data : []);
     }
     useEffect(() => { load(); }, []);
