@@ -50,6 +50,12 @@ const SOCIAL_ICONS: Record<string, React.ReactElement> = {
     ),
 };
 
+function normalizeUrl(url: string): string {
+    if (!url) return url;
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    return "https://" + url;
+}
+
 export default function Footer() {
     const [settings, setSettings] = useState<any>(null);
 
@@ -86,7 +92,7 @@ export default function Footer() {
                                 {activeSocial.map(([network, url]) => (
                                     <a
                                         key={network}
-                                        href={url}
+                                        href={normalizeUrl(url)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         aria-label={network}
