@@ -84,15 +84,6 @@ export default async function SponsorsPage() {
                 </section>
             </div>
             <Footer />
-            <style jsx>{`
-                .sponsor-logo-link {
-                    opacity: 0.7;
-                    transition: opacity 0.3s;
-                }
-                .sponsor-logo-link:hover {
-                    opacity: 1;
-                }
-            `}</style>
         </>
     );
 }

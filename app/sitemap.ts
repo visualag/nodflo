@@ -1,9 +1,9 @@
 import { MetadataRoute } from 'next';
-import dbConnect from './lib/db';
-import Artist from './models/Artist';
-import Exhibition from './models/Exhibition';
-import News from './models/News';
-import OpenCall from './models/OpenCall';
+import dbConnect from '@/lib/db';
+import Artist from '@/models/Artist';
+import Exhibition from '@/models/Exhibition';
+import News from '@/models/News';
+import { OpenCall } from '@/models/OpenCall';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     await dbConnect();
