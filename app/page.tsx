@@ -19,6 +19,8 @@ function formatDate(d: any) {
 import PageContent from "@/models/PageContent";
 import type { Metadata } from "next";
 
+const KAKI = "var(--cream)";
+
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {

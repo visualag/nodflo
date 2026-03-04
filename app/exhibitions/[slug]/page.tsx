@@ -5,6 +5,7 @@ import NewsletterForm from "@/components/NewsletterForm";
 import dbConnect from "@/lib/db";
 import Exhibition from "@/models/Exhibition";
 import Artist from "@/models/Artist"; // Critical for populate
+import mongoose from "mongoose";
 import { notFound } from "next/navigation";
 import { ExhibitionDetailClient } from "@/components/ExhibitionDetailClient";
 import { CalendarButton } from "@/components/CalendarButton";
@@ -64,8 +65,9 @@ export default async function ExhibitionDetailPage({ params }: { params: Promise
 
         // Manually hydrate Artists to prevent Vercel Serverless MissingSchemaError crashes
         // This is 100% resilient to deleted references and execution order bugs.
-        const artistIds = exhibitionDoc.artists?.map((a: any) => a.artist).filter(Boolean) || [];
-        const populatedArtists = artistIds.length > 0 ? await Artist.find({ _id: { $in: artistIds } }).lean() : [];
+        const rawArtistIds = exhibitionDoc.artists?.map((a: any) => a.artist).filter(Boolean) || [];
+        const validArtistIds = rawArtistIds.filter((id: string) => mongoose.Types.ObjectId.isValid(id.toString()));
+        const populatedArtists = validArtistIds.length > 0 ? await Artist.find({ _id: { $in: validArtistIds } }).lean() : [];
 
         exhibitionDoc.artists = exhibitionDoc.artists?.map((a: any) => ({
             ...a,
