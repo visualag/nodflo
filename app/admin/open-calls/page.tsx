@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const EMPTY = { title: "", slug: "", description: "", requirements: "", deadline: "", isActive: true, coverImage: "" };
+const EMPTY = { title: "", slug: "", description: "", requirements: "", deadline: "", isActive: true, showOnHomepage: false, coverImage: "" };
 
 function slugify(str: string) {
     return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -43,7 +43,7 @@ export default function AdminOpenCalls() {
         setForm({
             title: c.title || "", slug: c.slug || "", description: c.description || "",
             requirements: c.requirements || "", deadline: c.deadline?.slice(0, 10) || "",
-            isActive: c.isActive ?? true, coverImage: c.coverImage || ""
+            isActive: c.isActive ?? true, showOnHomepage: c.showOnHomepage ?? false, coverImage: c.coverImage || ""
         });
         setEditing(c); setShowModal(true);
     }
@@ -86,7 +86,7 @@ export default function AdminOpenCalls() {
 
             <div className="card" style={{ padding: 0, marginBottom: 48 }}>
                 <table className="admin-table">
-                    <thead><tr><th>Title</th><th>Deadline</th><th>Status</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Title</th><th>Deadline</th><th>Status</th><th>Homepage</th><th>Actions</th></tr></thead>
                     <tbody>
                         {calls.length === 0 && (
                             <tr><td colSpan={4} style={{ textAlign: "center", padding: 40, color: "var(--grey-600)" }}>No open calls yet.</td></tr>
@@ -96,6 +96,7 @@ export default function AdminOpenCalls() {
                                 <td style={{ fontWeight: 500 }}>{c.title}</td>
                                 <td style={{ fontSize: "0.8rem" }}>{c.deadline ? new Date(c.deadline).toLocaleDateString("en-GB") : "—"}</td>
                                 <td><span className={`tag ${c.isActive ? "tag--active" : "tag--inactive"}`}>{c.isActive ? "Active" : "Closed"}</span></td>
+                                <td><span style={{ fontSize: "0.75rem", color: c.showOnHomepage ? "#166534" : "#999" }}>{c.showOnHomepage ? "✓ Da" : "Nu"}</span></td>
                                 <td>
                                     <div style={{ display: "flex", gap: 8 }}>
                                         <button onClick={() => loadApplications(c)} className="btn btn--outline btn--sm">Submissions</button>
@@ -203,6 +204,14 @@ export default function AdminOpenCalls() {
                                         onChange={(e) => setForm({ ...form, isActive: e.target.value === "active" })}>
                                         <option value="active">Active</option>
                                         <option value="closed">Closed</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Arată pe Homepage?</label>
+                                    <select className="form-select" value={form.showOnHomepage ? "yes" : "no"}
+                                        onChange={(e) => setForm({ ...form, showOnHomepage: e.target.value === "yes" })}>
+                                        <option value="no">Nu</option>
+                                        <option value="yes">Da</option>
                                     </select>
                                 </div>
                             </div>

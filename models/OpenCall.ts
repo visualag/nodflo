@@ -7,6 +7,7 @@ const OpenCallSchema = new Schema({
     requirements: { type: String },
     deadline: { type: Date },
     isActive: { type: Boolean, default: true },
+    showOnHomepage: { type: Boolean, default: false },
     coverImage: { type: String },
 }, { timestamps: true });
 

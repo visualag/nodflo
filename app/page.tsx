@@ -83,7 +83,7 @@ export default function HomePage() {
 
   const current = exhibitions.filter((e) => e.type === "current").slice(0, 3);
   const upcoming = exhibitions.filter((e) => e.type === "upcoming").slice(0, 3);
-  const activeCalls = openCalls.filter((c: any) => c.isActive);
+  const activeCalls = openCalls.filter((c: any) => c.showOnHomepage);
 
   async function handleSubscribe(e: React.FormEvent) {
     e.preventDefault();
