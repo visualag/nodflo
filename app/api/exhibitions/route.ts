@@ -5,9 +5,17 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import Exhibition from "@/models/Exhibition";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     await dbConnect();
-    const exhibitions = await Exhibition.find({}).sort({ createdAt: -1 });
+    const { searchParams } = new URL(req.url);
+    const slug = searchParams.get("slug");
+
+    if (slug) {
+        const exhibition = await Exhibition.findOne({ slug }).populate("artists.artist");
+        return exhibition ? NextResponse.json(exhibition) : NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const exhibitions = await Exhibition.find({}).sort({ createdAt: -1 }).populate("artists.artist");
     return NextResponse.json(exhibitions);
 }
 

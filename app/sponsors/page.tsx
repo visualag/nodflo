@@ -53,9 +53,9 @@ export default function SponsorsPage() {
                             </p>
                         </div>
 
-                        <TierSection title="Main Partners" items={tiers.gold} size={100} />
-                        <TierSection title="Supported By" items={tiers.silver} size={70} />
-                        <TierSection title="Cultural Partners" items={tiers.partner} size={50} />
+                        <TierSection title="Main Partners" items={tiers.gold} size={150} />
+                        <TierSection title="Supported By" items={tiers.silver} size={80} />
+                        <TierSection title="Cultural Partners" items={tiers.partner} size={60} />
 
                         {sponsors.length === 0 && (
                             <p style={{ textAlign: "center", fontStyle: "italic", color: "var(--grey-600)", padding: 40 }}>

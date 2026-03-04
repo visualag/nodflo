@@ -3,11 +3,20 @@ import mongoose, { Schema, models } from 'mongoose';
 const ExhibitionSchema = new Schema({
     title: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
-    artist: { type: String, required: true },
+    artist: { type: String }, // Keep for backward compatibility or as summary
+    artists: [{
+        artist: { type: Schema.Types.ObjectId, ref: 'Artist' },
+        manualName: { type: String }
+    }],
+    exhibitionType: { type: String, enum: ['Solo', 'Group'], default: 'Solo' },
     type: { type: String, enum: ['current', 'upcoming', 'past'], default: 'current' },
     startDate: { type: Date },
     endDate: { type: Date },
-    location: { type: String, default: 'NOD FLOW Gallery' },
+    location: {
+        name: { type: String, default: 'NOD FLOW Gallery' },
+        address: { type: String },
+        mapUrl: { type: String }
+    },
     coverImage: { type: String },
     images: [{ type: String }],
     description: { type: String },
