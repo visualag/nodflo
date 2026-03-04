@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import NewsletterForm from "@/components/NewsletterForm";
 import dbConnect from "@/lib/db";
 import Exhibition from "@/models/Exhibition";
+import Artist from "@/models/Artist"; // Critical for populate
 import { notFound } from "next/navigation";
 import { ExhibitionDetailClient } from "@/components/ExhibitionDetailClient";
 import { CalendarButton } from "@/components/CalendarButton";
@@ -80,7 +81,7 @@ export default async function ExhibitionDetailPage({ params }: { params: Promise
                         {exhibition.exhibitionType === "Group" ? (
                             "Group Exhibition"
                         ) : (
-                            exhibition.artists?.[0]?.artist?.name || exhibition.artists?.[0]?.manualName || exhibition.artist || "Individual Exhibition"
+                            exhibition.artists?.[0]?.artist?.name || exhibition.artists?.[0]?.manualName || exhibition.artist || ""
                         )}
                     </div>
                     <p style={{ color: "rgba(245,244,240,0.5)", fontSize: "0.8rem", letterSpacing: "0.08em" }}>
@@ -121,20 +122,23 @@ export default async function ExhibitionDetailPage({ params }: { params: Promise
                                     <div>
                                         <div style={{ fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--grey-600)", marginBottom: 8 }}>Artists</div>
                                         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                            {exhibition.artists?.length > 0 ? (
-                                                exhibition.artists.map((a: any, i: number) => (
-                                                    <div key={i}>
-                                                        {a.artist ? (
-                                                            <Link href={`/artists/${a.artist.slug}`} style={{ color: "var(--black)", textDecoration: "none", borderBottom: "1px solid transparent", transition: "border 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderBottomColor = "var(--black)"} onMouseLeave={e => e.currentTarget.style.borderBottomColor = "transparent"}>
-                                                                {a.artist.name}
-                                                            </Link>
-                                                        ) : (
-                                                            <span>{a.manualName}</span>
-                                                        )}
-                                                    </div>
-                                                ))
+                                            {exhibition.artists && exhibition.artists.length > 0 ? (
+                                                exhibition.artists.map((a: any, i: number) => {
+                                                    if (!a) return null;
+                                                    return (
+                                                        <div key={i}>
+                                                            {a.artist && a.artist.slug ? (
+                                                                <Link href={`/artists/${a.artist.slug}`} style={{ color: "var(--black)", textDecoration: "none", borderBottom: "1px solid transparent", transition: "border 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderBottomColor = "var(--black)"} onMouseLeave={e => e.currentTarget.style.borderBottomColor = "transparent"}>
+                                                                    {a.artist.name || "Unnamed Artist"}
+                                                                </Link>
+                                                            ) : (
+                                                                <span>{a.manualName || a.artist?.name || "Unknown"}</span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })
                                             ) : (
-                                                <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.1rem" }}>{exhibition.artist}</div>
+                                                <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.1rem" }}>{exhibition.artist || "Individual Exhibition"}</div>
                                             )}
                                         </div>
                                     </div>
