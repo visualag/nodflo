@@ -247,7 +247,15 @@ export default function AdminSettingsPage() {
                                         <label className="form-label">Slide Image</label>
                                         <div style={{ position: "relative", marginBottom: "12px", minHeight: "120px", background: "var(--white-200)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                             {slide.img ? (
-                                                <img src={slide.img} style={{ width: "100%", height: "120px", objectFit: "cover" }} />
+                                                <>
+                                                    <img src={slide.img} style={{ width: "100%", height: "120px", objectFit: "cover" }} />
+                                                    <button
+                                                        onClick={() => updateSlide(i, "img", "")}
+                                                        style={{ position: "absolute", top: 8, right: 8, background: "#ef4444", color: "white", border: "none", borderRadius: "2px", padding: "4px 8px", fontSize: "0.6rem", cursor: "pointer" }}
+                                                    >
+                                                        REMOVE
+                                                    </button>
+                                                </>
                                             ) : (
                                                 <span style={{ fontSize: "0.7rem", color: "var(--grey-400)" }}>No image</span>
                                             )}

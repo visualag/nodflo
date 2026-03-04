@@ -38,8 +38,10 @@ export async function PUT(req: Request) {
 
     await dbConnect();
     try {
-        const { _id, __v, ...data } = await req.json();
-        console.log("PUT /api/settings received payload (sanitized):", JSON.stringify(data, null, 2));
+        const body = await req.json();
+        const { _id, __v, ...data } = body;
+        console.log("PUT /api/settings - User:", session.user?.email);
+        console.log("PUT /api/settings - Payload keys:", Object.keys(data).join(", "));
 
         // Use findOneAndUpdate with upsert for absolute reliability
         const settings = await Settings.findOneAndUpdate({}, data, {
@@ -49,10 +51,11 @@ export async function PUT(req: Request) {
             setDefaultsOnInsert: true
         });
 
-        console.log("PUT /api/settings update successful");
+        if (!settings) throw new Error("Update returned null");
+        console.log("PUT /api/settings - Update SUCCESS");
         return NextResponse.json(settings);
     } catch (error: any) {
-        console.error("PUT /api/settings error:", error);
+        console.error("PUT /api/settings - ERROR:", error.message);
         return NextResponse.json({
             error: error.message || 'Failed to update settings',
             details: error.errors ? Object.keys(error.errors).map(k => error.errors[k].message) : []
