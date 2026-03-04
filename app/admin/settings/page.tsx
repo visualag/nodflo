@@ -403,25 +403,207 @@ export default function AdminSettingsPage() {
                     </div>
                 </section>
 
-                {/* --- Branding & Footer --- */}
+                {/* --- Branding & Identity --- */}
                 <section className="card">
-                    <div className="card__header"><h2 className="card__title">Branding & Footer</h2></div>
+                    <div className="card__header"><h2 className="card__title">Identitate Galerie</h2></div>
                     <div className="card__body" style={{ display: "grid", gap: "24px" }}>
                         <div className="form-group">
-                            <label className="form-label">Gallery Display Name</label>
-                            <input className="form-input" value={settings?.galleryName || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, galleryName: e.target.value }) : null)} />
+                            <label className="form-label">Nume Galerie (apare în nav și footer dacă nu ai logo)</label>
+                            <input className="form-input" value={(settings as any)?.galleryName || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, galleryName: e.target.value } as any) : null)} />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Footer Short Description</label>
-                            <textarea className="form-input" rows={3} value={settings?.footerDescription || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, footerDescription: e.target.value }) : null)} />
+                            <label className="form-label">Logo (opțional — dacă este setat, înlocuiește numele)</label>
+                            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                                {(settings as any)?.logoUrl ? (
+                                    <div style={{ position: "relative" }}>
+                                        <img src={(settings as any).logoUrl} style={{ height: 40, objectFit: "contain", background: "#333", padding: 4, borderRadius: 2 }} />
+                                        <button type="button" onClick={() => setSettings(prev => prev ? ({ ...prev, logoUrl: "" } as any) : null)}
+                                            style={{ position: "absolute", top: -8, right: -8, background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer" }}>×</button>
+                                    </div>
+                                ) : (
+                                    <div style={{ width: 60, height: 40, background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#999" }}>No logo</div>
+                                )}
+                                <div style={{ flex: 1 }}>
+                                    <input type="file" accept="image/*" onChange={async (e) => {
+                                        const file = e.target.files?.[0]; if (!file) return;
+                                        setUploadingTarget("logo");
+                                        try {
+                                            const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+                                            const data = await res.json();
+                                            if (data.url) setSettings(prev => prev ? ({ ...prev, logoUrl: data.url } as any) : null);
+                                        } catch { alert("Upload failed"); } finally { setUploadingTarget(null); }
+                                    }} />
+                                    <input className="form-input" style={{ marginTop: 8, fontSize: "0.8rem" }} placeholder="Sau paste URL logo..."
+                                        value={(settings as any)?.logoUrl || ""}
+                                        onChange={(e) => setSettings(prev => prev ? ({ ...prev, logoUrl: e.target.value } as any) : null)} />
+                                </div>
+                            </div>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Copyright Text</label>
-                            <input className="form-input" value={settings?.footerText || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, footerText: e.target.value }) : null)} />
+                            <label className="form-label">Footer Descriere Scurtă</label>
+                            <textarea className="form-input" rows={3} value={(settings as any)?.footerDescription || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, footerDescription: e.target.value } as any) : null)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Text Copyright</label>
+                            <input className="form-input" value={(settings as any)?.footerText || ""} onChange={(e) => setSettings(prev => prev ? ({ ...prev, footerText: e.target.value } as any) : null)} />
                         </div>
                     </div>
                 </section>
 
+                {/* --- Navigation Links Editor --- */}
+                <section className="card">
+                    <div className="card__header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <h2 className="card__title">Navigare (Meniu Principal)</h2>
+                        <button className="btn btn--outline btn--sm" onClick={() => {
+                            const nav = (settings as any)?.navLinks || [];
+                            setSettings(prev => prev ? ({ ...prev, navLinks: [...nav, { label: "", href: "", children: [] }] } as any) : null);
+                        }}>+ Adaugă Link</button>
+                    </div>
+                    <div className="card__body" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        <p style={{ fontSize: "0.8rem", color: "var(--grey-600)", margin: 0 }}>Dacă lista e goală, se folosesc link-urile implicite. Poți adăuga sub-pagini (dropdown) la fiecare link.</p>
+                        {((settings as any)?.navLinks || []).map((link: any, i: number) => (
+                            <div key={i} style={{ border: "1px solid var(--grey-100)", borderRadius: 4, padding: 16 }}>
+                                <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+                                    <input className="form-input" placeholder="Label (ex: Exhibitions)" value={link.label}
+                                        onChange={(e) => {
+                                            const nav = [...((settings as any)?.navLinks || [])];
+                                            nav[i] = { ...nav[i], label: e.target.value };
+                                            setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
+                                        }} style={{ flex: 1 }} />
+                                    <input className="form-input" placeholder="URL (ex: /exhibitions)" value={link.href}
+                                        onChange={(e) => {
+                                            const nav = [...((settings as any)?.navLinks || [])];
+                                            nav[i] = { ...nav[i], href: e.target.value };
+                                            setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
+                                        }} style={{ flex: 1 }} />
+                                    <button type="button" onClick={() => {
+                                        const nav = ((settings as any)?.navLinks || []).filter((_: any, j: number) => j !== i);
+                                        setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
+                                    }} style={{ color: "#ef4444", border: "none", background: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.75rem" }}>✕ Șterge</button>
+                                </div>
+                                {/* Sub-pages */}
+                                <div style={{ paddingLeft: 16, borderLeft: "2px solid var(--grey-100)", display: "flex", flexDirection: "column", gap: 6 }}>
+                                    {(link.children || []).map((child: any, ci: number) => (
+                                        <div key={ci} style={{ display: "flex", gap: 8 }}>
+                                            <input className="form-input" placeholder="Label sub-pagină" value={child.label} style={{ flex: 1, fontSize: "0.8rem" }}
+                                                onChange={(e) => {
+                                                    const nav = [...((settings as any)?.navLinks || [])];
+                                                    nav[i].children[ci] = { ...nav[i].children[ci], label: e.target.value };
+                                                    setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
+                                                }} />
+                                            <input className="form-input" placeholder="URL" value={child.href} style={{ flex: 1, fontSize: "0.8rem" }}
+                                                onChange={(e) => {
+                                                    const nav = [...((settings as any)?.navLinks || [])];
+                                                    nav[i].children[ci] = { ...nav[i].children[ci], href: e.target.value };
+                                                    setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
+                                                }} />
+                                            <button type="button" onClick={() => {
+                                                const nav = [...((settings as any)?.navLinks || [])];
+                                                nav[i].children = nav[i].children.filter((_: any, j: number) => j !== ci);
+                                                setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
+                                            }} style={{ color: "#ef4444", border: "none", background: "none", cursor: "pointer" }}>✕</button>
+                                        </div>
+                                    ))}
+                                    <button type="button" style={{ alignSelf: "flex-start", fontSize: "0.75rem", color: "var(--accent-dark)", background: "none", border: "none", cursor: "pointer" }}
+                                        onClick={() => {
+                                            const nav = [...((settings as any)?.navLinks || [])];
+                                            nav[i].children = [...(nav[i].children || []), { label: "", href: "" }];
+                                            setSettings(prev => prev ? ({ ...prev, navLinks: nav } as any) : null);
+                                        }}>+ Sub-pagină</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* --- Footer Columns Editor --- */}
+                <section className="card">
+                    <div className="card__header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <h2 className="card__title">Footer — Coloane & Link-uri</h2>
+                        <button className="btn btn--outline btn--sm" onClick={() => {
+                            const cols = (settings as any)?.footerColumns || [];
+                            setSettings(prev => prev ? ({ ...prev, footerColumns: [...cols, { title: "Coloana Nouă", links: [] }] } as any) : null);
+                        }}>+ Coloană</button>
+                    </div>
+                    <div className="card__body" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+                        <p style={{ fontSize: "0.8rem", color: "var(--grey-600)", gridColumn: "1/-1", margin: 0 }}>Dacă nu configurezi coloane, se folosesc cele implicite.</p>
+                        {((settings as any)?.footerColumns || []).map((col: any, ci: number) => (
+                            <div key={ci} style={{ border: "1px solid var(--grey-100)", borderRadius: 4, padding: 16 }}>
+                                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                                    <input className="form-input" placeholder="Titlu coloană" value={col.title} style={{ flex: 1, fontWeight: 600 }}
+                                        onChange={(e) => {
+                                            const cols = [...((settings as any)?.footerColumns || [])];
+                                            cols[ci] = { ...cols[ci], title: e.target.value };
+                                            setSettings(prev => prev ? ({ ...prev, footerColumns: cols } as any) : null);
+                                        }} />
+                                    <button type="button" onClick={() => {
+                                        const cols = ((settings as any)?.footerColumns || []).filter((_: any, j: number) => j !== ci);
+                                        setSettings(prev => prev ? ({ ...prev, footerColumns: cols } as any) : null);
+                                    }} style={{ color: "#ef4444", border: "none", background: "none", cursor: "pointer", fontWeight: 600 }}>✕</button>
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    {(col.links || []).map((link: any, li: number) => (
+                                        <div key={li} style={{ display: "flex", gap: 6 }}>
+                                            <input className="form-input" placeholder="Label" value={link.label} style={{ flex: 1, fontSize: "0.8rem" }}
+                                                onChange={(e) => {
+                                                    const cols = [...((settings as any)?.footerColumns || [])];
+                                                    cols[ci].links[li] = { ...cols[ci].links[li], label: e.target.value };
+                                                    setSettings(prev => prev ? ({ ...prev, footerColumns: cols } as any) : null);
+                                                }} />
+                                            <input className="form-input" placeholder="URL" value={link.href} style={{ flex: 1, fontSize: "0.8rem" }}
+                                                onChange={(e) => {
+                                                    const cols = [...((settings as any)?.footerColumns || [])];
+                                                    cols[ci].links[li] = { ...cols[ci].links[li], href: e.target.value };
+                                                    setSettings(prev => prev ? ({ ...prev, footerColumns: cols } as any) : null);
+                                                }} />
+                                            <button type="button" onClick={() => {
+                                                const cols = [...((settings as any)?.footerColumns || [])];
+                                                cols[ci].links = cols[ci].links.filter((_: any, j: number) => j !== li);
+                                                setSettings(prev => prev ? ({ ...prev, footerColumns: cols } as any) : null);
+                                            }} style={{ color: "#ef4444", border: "none", background: "none", cursor: "pointer" }}>✕</button>
+                                        </div>
+                                    ))}
+                                    <button type="button" style={{ alignSelf: "flex-start", fontSize: "0.75rem", color: "var(--accent-dark)", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}
+                                        onClick={() => {
+                                            const cols = [...((settings as any)?.footerColumns || [])];
+                                            cols[ci].links = [...(cols[ci].links || []), { label: "", href: "" }];
+                                            setSettings(prev => prev ? ({ ...prev, footerColumns: cols } as any) : null);
+                                        }}>+ Link</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+            </div>
+
+            <div style={{ marginTop: "40px", display: "grid", gap: "24px" }}>
+                <section className="card">
+                    <div className="card__header"><h2 className="card__title">Rețele de Socializare</h2></div>
+                    <div className="card__body" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                        {[
+                            { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/nodflo" },
+                            { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/nodflo" },
+                            { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@nodflo" },
+                            { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/@nodflo" },
+                            { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/nodflo" },
+                            { key: "x", label: "X (Twitter)", placeholder: "https://x.com/nodflo" },
+                        ].map(({ key, label, placeholder }) => (
+                            <div className="form-group" key={key}>
+                                <label className="form-label">{label}</label>
+                                <input
+                                    className="form-input"
+                                    placeholder={placeholder}
+                                    value={(settings as any)?.socialLinks?.[key] || ""}
+                                    onChange={(e) => setSettings((prev: any) => prev ? ({
+                                        ...prev,
+                                        socialLinks: { ...(prev.socialLinks || {}), [key]: e.target.value }
+                                    }) : null)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </section>
             </div>
 
             <div style={{ marginTop: "48px", textAlign: "right" }}>

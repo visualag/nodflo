@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const EMPTY = { title: "", date: "", excerpt: "", content: "", link: "", image: "", source: "" };
+const EMPTY = { title: "", date: "", excerpt: "", content: "", link: "", image: "", source: "", images: [] as string[], author: { name: "", bio: "", avatar: "" } };
 
 function slugify(s: string) {
     return s.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -30,7 +30,9 @@ export default function AdminNews() {
             content: n.content || "",
             link: n.link || "",
             image: n.image || "",
-            source: n.source || ""
+            images: Array.isArray(n.images) ? n.images : [],
+            source: n.source || "",
+            author: { name: n.author?.name || "", bio: n.author?.bio || "", avatar: n.author?.avatar || "" }
         });
         setEditing(n); setShowModal(true);
     }
@@ -192,6 +194,83 @@ export default function AdminNews() {
                                     onChange={(e) => setForm((prev: any) => ({ ...prev, content: e.target.value }))}
                                 />
                             </div>
+
+                            {/* ─── Author ─── */}
+                            <div className="form-group">
+                                <label className="form-label">Autor (opțional — apare doar dacă este completat)</label>
+                                <div className="form-grid">
+                                    <div className="form-group">
+                                        <label className="form-label" style={{ fontSize: "0.75rem" }}>Nume Autor</label>
+                                        <input className="form-input" value={form.author?.name || ""}
+                                            onChange={(e) => setForm((prev: any) => ({ ...prev, author: { ...prev.author, name: e.target.value } }))} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label" style={{ fontSize: "0.75rem" }}>Bio scurt</label>
+                                        <input className="form-input" value={form.author?.bio || ""}
+                                            onChange={(e) => setForm((prev: any) => ({ ...prev, author: { ...prev.author, bio: e.target.value } }))} />
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: 8 }}>
+                                    <label className="form-label" style={{ fontSize: "0.75rem" }}>Avatar Autor</label>
+                                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                                        {form.author?.avatar && <img src={form.author.avatar} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} />}
+                                        <div style={{ flex: 1 }}>
+                                            <input type="file" accept="image/*" onChange={async (e) => {
+                                                const file = e.target.files?.[0]; if (!file) return;
+                                                setUploadingTarget("avatar");
+                                                try {
+                                                    const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+                                                    const data = await res.json();
+                                                    if (data.url) setForm((prev: any) => ({ ...prev, author: { ...prev.author, avatar: data.url } }));
+                                                } catch { alert("Upload failed"); } finally { setUploadingTarget(null); }
+                                            }} />
+                                            <input className="form-input" style={{ marginTop: 8, fontSize: "0.8rem" }} placeholder="Sau paste URL avatar..."
+                                                value={form.author?.avatar || ""}
+                                                onChange={(e) => setForm((prev: any) => ({ ...prev, author: { ...prev.author, avatar: e.target.value } }))} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ─── Gallery ─── */}
+                            <div className="form-group">
+                                <label className="form-label">Galerie Imagini Articol (opțional)</label>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
+                                    {(form.images || []).map((img: string, i: number) => (
+                                        <div key={i} style={{ position: "relative" }}>
+                                            <img src={img} style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 2 }} />
+                                            <button type="button"
+                                                onClick={() => setForm((prev: any) => ({ ...prev, images: prev.images.filter((_: any, j: number) => j !== i) }))}
+                                                style={{ position: "absolute", top: -8, right: -8, background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer" }}>×</button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <input type="file" accept="image/*" multiple disabled={!!uploadingTarget}
+                                    onChange={async (e) => {
+                                        const files = Array.from(e.target.files || []); if (!files.length) return;
+                                        setUploadingTarget("gallery");
+                                        try {
+                                            const urls: string[] = [];
+                                            for (const file of files) {
+                                                const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+                                                const data = await res.json();
+                                                if (data.url) urls.push(data.url);
+                                            }
+                                            setForm((prev: any) => ({ ...prev, images: [...(prev.images || []), ...urls] }));
+                                        } catch { alert("Upload failed"); } finally { setUploadingTarget(null); }
+                                    }} />
+                                <input className="form-input" style={{ marginTop: 8, fontSize: "0.8rem" }}
+                                    placeholder="Sau paste URL și apasă Enter..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" && (e.target as HTMLInputElement).value.trim()) {
+                                            e.preventDefault();
+                                            const url = (e.target as HTMLInputElement).value.trim();
+                                            setForm((prev: any) => ({ ...prev, images: [...(prev.images || []), url] }));
+                                            (e.target as HTMLInputElement).value = "";
+                                        }
+                                    }} />
+                            </div>
+
                             <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
                                 <button className="btn btn--dark" style={{ flex: 1 }} onClick={save} disabled={saving || !!uploadingTarget}>
                                     {saving ? "Saving..." : "Save News Item"}

@@ -8,9 +8,28 @@ const HeroSlideSchema = new mongoose.Schema({
     link: { type: String },
 });
 
+const NavLinkSchema = new mongoose.Schema({
+    label: { type: String, required: true },
+    href: { type: String, required: true },
+    children: [{ label: String, href: String }],
+});
+
+const FooterLinkSchema = new mongoose.Schema({
+    label: { type: String, required: true },
+    href: { type: String, required: true },
+});
+
+const FooterColumnSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    links: [FooterLinkSchema],
+});
+
 const SettingsSchema = new mongoose.Schema({
     heroSlides: [HeroSlideSchema],
     galleryName: { type: String, default: 'NOD FLOW' },
+    logoUrl: { type: String, default: '' },
+    navLinks: [NavLinkSchema],
+    footerColumns: [FooterColumnSchema],
     aboutText: { type: String },
     contactEmail: { type: String, default: 'info@nodflo.com' },
     contactPhone: { type: String },
@@ -20,6 +39,14 @@ const SettingsSchema = new mongoose.Schema({
     mapUrl: { type: String },
     footerDescription: { type: String, default: 'A contemporary art gallery dedicated to presenting groundbreaking exhibitions.' },
     footerText: { type: String, default: '© 2026 NOD FLOW. All rights reserved.' },
+    socialLinks: {
+        instagram: { type: String, default: '' },
+        facebook: { type: String, default: '' },
+        tiktok: { type: String, default: '' },
+        youtube: { type: String, default: '' },
+        linkedin: { type: String, default: '' },
+        x: { type: String, default: '' },
+    },
     homepageExtraTitle: { type: String },
     homepageExtraContent: { type: String },
     homepageExtraImage: { type: String },
