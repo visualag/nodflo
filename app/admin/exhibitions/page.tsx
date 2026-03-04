@@ -38,7 +38,8 @@ export default function AdminExhibitions() {
 
     async function save() {
         setSaving(true);
-        const payload = { ...form, slug: form.slug || slugify(form.title) };
+        const { _id, ...cleanForm } = form as any;
+        const payload = { ...cleanForm, slug: form.slug || slugify(form.title) };
         if (editing) {
             await fetch(`/api/exhibitions/${editing._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         } else {
@@ -139,9 +140,23 @@ export default function AdminExhibitions() {
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Cover Image URL</label>
-                                <input className="form-input" placeholder="https://..." value={form.coverImage}
-                                    onChange={(e) => setForm({ ...form, coverImage: e.target.value })} />
+                                <label className="form-label">Cover Image</label>
+                                <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                                    {form.coverImage && <img src={form.coverImage} style={{ width: 100, height: 60, objectFit: "cover", borderRadius: 2 }} />}
+                                    <div style={{ flex: 1 }}>
+                                        <input type="file" onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setSaving(true);
+                                            try {
+                                                const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+                                                const data = await res.json();
+                                                if (data.url) setForm({ ...form, coverImage: data.url });
+                                            } catch (err) { alert("Upload failed"); }
+                                            finally { setSaving(false); }
+                                        }} />
+                                    </div>
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Location</label>

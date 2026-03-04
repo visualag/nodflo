@@ -35,17 +35,18 @@ export default function AdminNews() {
         if (!form.title || !form.date) return alert("Title and Date are required.");
         setSaving(true);
         try {
+            const { _id, __v, ...data } = form;
             if (editing) {
                 await fetch(`/api/news/${editing._id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(form)
+                    body: JSON.stringify(data)
                 });
             } else {
                 await fetch("/api/news", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(form)
+                    body: JSON.stringify(data)
                 });
             }
             setShowModal(false);
@@ -148,7 +149,10 @@ export default function AdminNews() {
                                         fd.append("file", file);
                                         fd.append("folder", "news");
                                         try {
-                                            const res = await fetch("/api/upload", { method: "POST", body: fd });
+                                            const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, {
+                                                method: "POST",
+                                                body: file
+                                            });
                                             if (!res.ok) throw new Error("Upload failed");
                                             const data = await res.json();
                                             if (data.url) {

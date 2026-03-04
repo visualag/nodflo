@@ -39,7 +39,7 @@ function formatDate(d: string) {
   });
 }
 
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=900&q=80";
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1541944743827-e04bb645d993?w=900&q=80"; // Neutral abstract architecture/studio
 
 interface HeroSlide {
   img: string; eyebrow: string; title: string; subtitle: string; link?: string;

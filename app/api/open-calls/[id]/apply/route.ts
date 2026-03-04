@@ -27,11 +27,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         // Handle Images (up to 5)
         const imageFiles = formData.getAll("images") as File[];
         const uploadedImages = [];
+        const { put } = await import("@vercel/blob");
 
         for (const file of imageFiles.slice(0, 5)) {
-            const buffer = Buffer.from(await file.arrayBuffer());
-            const result = await uploadImage(buffer, `open-calls/${params.id}`);
-            uploadedImages.push(result);
+            const blob = await put(`open-calls/${params.id}/${file.name}`, file, {
+                access: 'public',
+            });
+            uploadedImages.push({ url: blob.url, publicId: blob.pathname });
         }
 
         // 1. Save Application

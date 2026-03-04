@@ -7,7 +7,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const session = await getServerSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await dbConnect();
-    const data = await req.json();
+    const { _id, __v, ...data } = await req.json();
     const sponsor = await Sponsor.findByIdAndUpdate(params.id, data, { new: true });
     return NextResponse.json(sponsor);
 }

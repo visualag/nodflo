@@ -17,7 +17,7 @@ export default function AdminOpenCalls() {
     const [saving, setSaving] = useState(false);
 
     async function load() {
-        const data = await fetch("/api/open-calls").then((r) => r.json());
+        const data = await fetch("/api/open-calls", { cache: "no-store" }).then((r) => r.json());
         setCalls(Array.isArray(data) ? data : []);
     }
 
@@ -50,7 +50,8 @@ export default function AdminOpenCalls() {
 
     async function save() {
         setSaving(true);
-        const payload = { ...form, slug: form.slug || slugify(form.title) };
+        const { _id, ...cleanForm } = form as any;
+        const payload = { ...cleanForm, slug: form.slug || slugify(form.title) };
         if (editing) {
             await fetch(`/api/open-calls/${editing._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         } else {

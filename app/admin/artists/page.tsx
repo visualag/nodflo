@@ -15,7 +15,7 @@ export default function AdminArtists() {
     const [saving, setSaving] = useState(false);
 
     async function load() {
-        const data = await fetch("/api/artists").then((r) => r.json());
+        const data = await fetch("/api/artists", { cache: "no-store" }).then((r) => r.json());
         setArtists(Array.isArray(data) ? data : []);
     }
     useEffect(() => { load(); }, []);
@@ -28,7 +28,8 @@ export default function AdminArtists() {
 
     async function save() {
         setSaving(true);
-        const payload = { ...form, slug: form.slug || slugify(form.name) };
+        const { _id, ...cleanForm } = form;
+        const payload = { ...cleanForm, slug: form.slug || slugify(form.name) };
         if (editing) await fetch(`/api/artists/${editing._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         else await fetch("/api/artists", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         setSaving(false); setShowModal(false); load();
@@ -95,8 +96,23 @@ export default function AdminArtists() {
                                 <input className="form-input" type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Photo URL</label>
-                                <input className="form-input" placeholder="https://..." value={form.photo} onChange={(e) => setForm({ ...form, photo: e.target.value })} />
+                                <label className="form-label">Photo</label>
+                                <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                                    {form.photo && <img src={form.photo} style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 2 }} />}
+                                    <div style={{ flex: 1 }}>
+                                        <input type="file" onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setSaving(true);
+                                            try {
+                                                const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+                                                const data = await res.json();
+                                                if (data.url) setForm({ ...form, photo: data.url });
+                                            } catch (err) { alert("Upload failed"); }
+                                            finally { setSaving(false); }
+                                        }} />
+                                    </div>
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Bio</label>

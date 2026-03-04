@@ -39,7 +39,7 @@ export default function AdminSettingsPage() {
     const isDirty = JSON.stringify(settings) !== JSON.stringify(original);
 
     useEffect(() => {
-        fetch("/api/settings")
+        fetch("/api/settings", { cache: "no-store" })
             .then((r) => r.json())
             .then((data) => {
                 setSettings(data);
@@ -65,10 +65,11 @@ export default function AdminSettingsPage() {
         setSaving(true); setMessage("");
         console.log("Attempting to save settings:", settings);
         try {
+            const { _id, __v, ...payload } = settings;
             const res = await fetch("/api/settings", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(settings),
+                body: JSON.stringify(payload),
             });
             const result = await res.json();
             console.log("Save response:", result);
@@ -97,10 +98,10 @@ export default function AdminSettingsPage() {
         formData.append("folder", "settings");
 
         try {
-            console.log(`Uploading file to ${target}...`);
-            const res = await fetch("/api/upload", {
+            console.log(`Uploading file to ${target} via Vercel Blob...`);
+            const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, {
                 method: "POST",
-                body: formData,
+                body: file,
             });
 
             if (!res.ok) {

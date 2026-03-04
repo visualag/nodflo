@@ -38,8 +38,8 @@ export async function PUT(req: Request) {
 
     await dbConnect();
     try {
-        const data = await req.json();
-        console.log("PUT /api/settings received payload:", JSON.stringify(data, null, 2));
+        const { _id, __v, ...data } = await req.json();
+        console.log("PUT /api/settings received payload (sanitized):", JSON.stringify(data, null, 2));
 
         // Use findOneAndUpdate with upsert for absolute reliability
         const settings = await Settings.findOneAndUpdate({}, data, {

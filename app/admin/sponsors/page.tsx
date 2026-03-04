@@ -24,8 +24,9 @@ export default function AdminSponsors() {
 
     async function save() {
         setSaving(true);
-        if (editing) await fetch(`/api/sponsors/${editing._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-        else await fetch("/api/sponsors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+        const { _id, ...payload } = form;
+        if (editing) await fetch(`/api/sponsors/${editing._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        else await fetch("/api/sponsors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         setSaving(false); setShowModal(false); load();
     }
 
@@ -85,8 +86,23 @@ export default function AdminSponsors() {
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Logo URL</label>
-                                <input className="form-input" placeholder="https://..." value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} />
+                                <label className="form-label">Logo</label>
+                                <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                                    {form.logo && <img src={form.logo} style={{ height: 40, objectFit: "contain", borderRadius: 2 }} />}
+                                    <div style={{ flex: 1 }}>
+                                        <input type="file" onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setSaving(true);
+                                            try {
+                                                const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+                                                const data = await res.json();
+                                                if (data.url) setForm({ ...form, logo: data.url });
+                                            } catch (err) { alert("Upload failed"); }
+                                            finally { setSaving(false); }
+                                        }} />
+                                    </div>
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Website</label>
