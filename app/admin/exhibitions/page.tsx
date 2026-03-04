@@ -179,6 +179,13 @@ export default function AdminExhibitions() {
                                             } catch (err) { alert("Upload failed"); }
                                             finally { setSaving(false); }
                                         }} />
+                                        <input
+                                            className="form-input"
+                                            style={{ marginTop: 8, fontSize: "0.8rem" }}
+                                            placeholder="Or paste image URL..."
+                                            value={form.coverImage}
+                                            onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
+                                        />
                                     </div>
                                 </div>
                             </div>

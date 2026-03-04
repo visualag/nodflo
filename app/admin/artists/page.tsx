@@ -138,6 +138,13 @@ export default function AdminArtists() {
                                             } catch (err) { alert("Upload failed"); }
                                             finally { setSaving(false); }
                                         }} />
+                                        <input
+                                            className="form-input"
+                                            style={{ marginTop: 8, fontSize: "0.8rem" }}
+                                            placeholder="Or paste image URL..."
+                                            value={form.photo}
+                                            onChange={(e) => setForm({ ...form, photo: e.target.value })}
+                                        />
                                     </div>
                                 </div>
                             </div>

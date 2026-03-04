@@ -41,7 +41,7 @@ function formatDate(d: string) {
   });
 }
 
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=900&q=80"; // Premium abstract art fallback
+const KAKI = "#7a7a5a";
 
 interface HeroSlide {
   img: string; eyebrow: string; title: string; subtitle: string; link?: string;
@@ -83,7 +83,7 @@ export default function HomePage() {
 
   const current = exhibitions.filter((e) => e.type === "current").slice(0, 3);
   const upcoming = exhibitions.filter((e) => e.type === "upcoming").slice(0, 3);
-  const activeCall = openCalls.find((c: any) => c.isActive);
+  const activeCalls = openCalls.filter((c: any) => c.isActive);
 
   async function handleSubscribe(e: React.FormEvent) {
     e.preventDefault();
@@ -154,12 +154,8 @@ export default function HomePage() {
             <div className="exhibition-grid">
               {current.map((ex) => (
                 <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
-                  <div className="exhibition-card__img-wrap">
-                    <img
-                      src={ex.coverImage || FALLBACK_IMG}
-                      alt={ex.title}
-                      className="exhibition-card__img"
-                    />
+                  <div className="exhibition-card__img-wrap" style={{ background: KAKI }}>
+                    {ex.coverImage && <img src={ex.coverImage} alt={ex.title} className="exhibition-card__img" />}
                   </div>
                   <div className="exhibition-card__tag">On View</div>
                   <div className="exhibition-card__title">{ex.title}</div>
@@ -174,27 +170,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Open Call Banner ── */}
-      {activeCall && (
-        <section className="open-call-banner" style={{ background: activeCall.coverImage ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${activeCall.coverImage}) center/cover no-repeat` : "var(--cream)" }}>
+      {/* ── Open Call Banners ── */}
+      {activeCalls.map((activeCall: any) => (
+        <section key={activeCall._id} className="open-call-banner" style={{ background: activeCall.coverImage ? `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${activeCall.coverImage}) center/cover no-repeat` : KAKI }}>
           <div className="container">
             <div className="open-call-banner__inner">
-              <div style={{ color: activeCall.coverImage ? "white" : "inherit" }}>
-                <div className="open-call-banner__label" style={{ background: activeCall.coverImage ? "white" : "var(--dark)", color: activeCall.coverImage ? "var(--dark)" : "white" }}>Open Call</div>
-                <div className="open-call-banner__title">{activeCall.title}</div>
+              <div style={{ color: "white" }}>
+                <div className="open-call-banner__label" style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "1px solid rgba(255,255,255,0.4)" }}>Open Call</div>
+                <div className="open-call-banner__title" style={{ color: "white" }}>{activeCall.title}</div>
                 {activeCall.deadline && (
-                  <p style={{ marginTop: 8, fontSize: "0.8rem", opacity: 0.8 }}>
+                  <p style={{ marginTop: 8, fontSize: "0.8rem", opacity: 0.8, color: "white" }}>
                     Deadline: {formatDate(activeCall.deadline)}
                   </p>
                 )}
               </div>
-              <Link href={`/open-calls/${activeCall.slug}`} className="btn btn--dark" style={{ background: activeCall.coverImage ? "white" : "var(--dark)", color: activeCall.coverImage ? "var(--dark)" : "white", border: "none" }}>
+              <Link href={`/open-calls/${activeCall.slug}`} className="btn btn--dark" style={{ background: "white", color: "#222", border: "none", flexShrink: 0 }}>
                 Apply Now →
               </Link>
             </div>
           </div>
         </section>
-      )}
+      ))}
 
       {/* ── Upcoming Exhibitions ── */}
       {upcoming.length > 0 && (
@@ -209,12 +205,8 @@ export default function HomePage() {
             <div className="exhibition-grid">
               {upcoming.map((ex) => (
                 <Link href={`/exhibitions/${ex.slug}`} key={ex._id} className="exhibition-card">
-                  <div className="exhibition-card__img-wrap">
-                    <img
-                      src={ex.coverImage || FALLBACK_IMG}
-                      alt={ex.title}
-                      className="exhibition-card__img"
-                    />
+                  <div className="exhibition-card__img-wrap" style={{ background: KAKI }}>
+                    {ex.coverImage && <img src={ex.coverImage} alt={ex.title} className="exhibition-card__img" />}
                   </div>
                   <div className="exhibition-card__tag" style={{ color: "#004085" }}>
                     Upcoming

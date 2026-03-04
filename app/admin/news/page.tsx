@@ -174,6 +174,13 @@ export default function AdminNews() {
                                         }
                                     }
                                 }} />
+                                <input
+                                    className="form-input"
+                                    style={{ marginTop: 8, fontSize: "0.8rem" }}
+                                    placeholder="Or paste image URL..."
+                                    value={form.image}
+                                    onChange={(e) => setForm((prev: any) => ({ ...prev, image: e.target.value }))}
+                                />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Full Article Content (HTML allowed)</label>

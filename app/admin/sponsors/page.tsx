@@ -128,6 +128,13 @@ export default function AdminSponsors() {
                                             } catch (err) { alert("Upload failed"); }
                                             finally { setSaving(false); }
                                         }} />
+                                        <input
+                                            className="form-input"
+                                            style={{ marginTop: 8, fontSize: "0.8rem" }}
+                                            placeholder="Or paste logo URL..."
+                                            value={form.logo}
+                                            onChange={(e) => setForm({ ...form, logo: e.target.value })}
+                                        />
                                     </div>
                                 </div>
                             </div>
