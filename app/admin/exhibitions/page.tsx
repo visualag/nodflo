@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 const EMPTY = {
     title: "", artist: "", slug: "", type: "current",
     startDate: "", endDate: "", location: "NOD FLOW Gallery",
-    coverImage: "", description: "", pressRelease: "",
+    coverImage: "", description: "", pressRelease: "", images: [] as string[],
 };
 
 function slugify(str: string) {
@@ -31,6 +31,7 @@ export default function AdminExhibitions() {
             type: ex.type || "current", startDate: ex.startDate?.slice(0, 10) || "",
             endDate: ex.endDate?.slice(0, 10) || "", location: ex.location || "NOD FLOW Gallery",
             coverImage: ex.coverImage || "", description: ex.description || "", pressRelease: ex.pressRelease || "",
+            images: Array.isArray(ex.images) ? ex.images : [],
         });
         setEditing(ex);
         setShowModal(true);
@@ -204,6 +205,59 @@ export default function AdminExhibitions() {
                                 <textarea className="form-textarea" rows={4} value={form.pressRelease}
                                     onChange={(e) => setForm({ ...form, pressRelease: e.target.value })} />
                             </div>
+
+                            {/* ─── Gallery / Image Gallery ─── */}
+                            <div className="form-group">
+                                <label className="form-label">Galerie Imagini (Installation Views)</label>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+                                    {(form.images || []).map((img: string, i: number) => (
+                                        <div key={i} style={{ position: "relative" }}>
+                                            <img src={img} style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 2 }} />
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm({ ...form, images: form.images.filter((_: any, j: number) => j !== i) })}
+                                                style={{ position: "absolute", top: -8, right: -8, background: "#ef4444", color: "white", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer" }}
+                                            >×</button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{ display: "flex", gap: 8 }}>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={async (e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            if (!files.length) return;
+                                            setSaving(true);
+                                            try {
+                                                const urls: string[] = [];
+                                                for (const file of files) {
+                                                    const res = await fetch(`/api/upload/blob?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+                                                    const data = await res.json();
+                                                    if (data.url) urls.push(data.url);
+                                                }
+                                                setForm({ ...form, images: [...(form.images || []), ...urls] });
+                                            } catch { alert("Upload failed"); }
+                                            finally { setSaving(false); }
+                                        }}
+                                    />
+                                </div>
+                                <input
+                                    className="form-input"
+                                    style={{ marginTop: 8, fontSize: "0.8rem" }}
+                                    placeholder="Or paste image URL and press Enter..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" && (e.target as HTMLInputElement).value.trim()) {
+                                            e.preventDefault();
+                                            const url = (e.target as HTMLInputElement).value.trim();
+                                            setForm({ ...form, images: [...(form.images || []), url] });
+                                            (e.target as HTMLInputElement).value = "";
+                                        }
+                                    }}
+                                />
+                            </div>
+
                             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                                 <button onClick={() => setShowModal(false)} className="btn btn--outline">Cancel</button>
                                 <button onClick={save} disabled={saving} className="btn btn--dark">
