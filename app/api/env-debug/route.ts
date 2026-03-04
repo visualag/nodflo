@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 export async function GET(req: Request) {
-    const authHeader = req.headers.get("x-debug-secret");
-    if (authHeader !== "nodflo-debug-2026") {
+    const { searchParams } = new URL(req.url);
+    if (searchParams.get("secret") !== "nodflo-debug-2026") {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
