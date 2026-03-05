@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import TeamMember from "@/models/TeamMember";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
     await dbConnect();
@@ -17,5 +18,8 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const data = await req.json();
     const member = await TeamMember.create(data);
+
+    revalidatePath("/team");
+
     return NextResponse.json(member, { status: 201 });
 }

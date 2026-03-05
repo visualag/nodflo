@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import { OpenCall } from "@/models/OpenCall";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
     await dbConnect();
@@ -17,5 +18,9 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const data = await req.json();
     const call = await OpenCall.create(data);
+
+    revalidatePath("/open-calls");
+    revalidatePath("/");
+
     return NextResponse.json(call, { status: 201 });
 }

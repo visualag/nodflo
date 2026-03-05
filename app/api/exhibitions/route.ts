@@ -5,6 +5,24 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import Exhibition from "@/models/Exhibition";
 import Artist from "@/models/Artist";
+import { revalidatePath } from "next/cache";
+
+function serializeDoc(doc: any) {
+    if (!doc) return doc;
+    const serialized = { ...doc };
+    if (serialized._id) serialized._id = serialized._id.toString();
+    if (serialized.createdAt) serialized.createdAt = new Date(serialized.createdAt).toISOString();
+    if (serialized.updatedAt) serialized.updatedAt = new Date(serialized.updatedAt).toISOString();
+    // Recursively serialize artists array if populated
+    if (Array.isArray(serialized.artists)) {
+        serialized.artists = serialized.artists.map((a: any) => ({
+            ...a,
+            _id: a._id?.toString() || undefined,
+            artist: typeof a.artist === 'object' && a.artist !== null ? serializeDoc(a.artist) : a.artist?.toString()
+        }));
+    }
+    return serialized;
+}
 
 export async function GET(req: NextRequest) {
     try {
@@ -23,7 +41,7 @@ export async function GET(req: NextRequest) {
                 artist: populatedArtists.find((pa: any) => pa._id.toString() === a.artist?.toString()) || null
             }));
 
-            return NextResponse.json(exhibitionDoc);
+            return NextResponse.json(serializeDoc(exhibitionDoc));
         }
 
         const exhibitionsRaw = await Exhibition.find({}).sort({ startDate: -1 }).lean() as any[];
@@ -45,7 +63,7 @@ export async function GET(req: NextRequest) {
             };
         });
 
-        return NextResponse.json(exhibitions);
+        return NextResponse.json(exhibitions.map(serializeDoc));
     } catch (error: any) {
         console.error("Exhibition GET Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -60,7 +78,11 @@ export async function POST(req: NextRequest) {
         await dbConnect();
         const data = await req.json();
         const exhibition = await Exhibition.create(data);
-        return NextResponse.json(exhibition, { status: 201 });
+
+        revalidatePath("/exhibitions");
+        revalidatePath("/");
+
+        return NextResponse.json(serializeDoc(exhibition.toObject()), { status: 201 });
     } catch (error: any) {
         console.error("Exhibition POST Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });

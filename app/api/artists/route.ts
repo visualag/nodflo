@@ -4,6 +4,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import Artist from "@/models/Artist";
+import { revalidatePath } from "next/cache";
+
+function serializeDoc(doc: any) {
+    if (!doc) return doc;
+    const serialized = { ...doc, _id: doc._id.toString() };
+    if (serialized.createdAt) serialized.createdAt = new Date(serialized.createdAt).toISOString();
+    if (serialized.updatedAt) serialized.updatedAt = new Date(serialized.updatedAt).toISOString();
+    if (serialized.visibilityEnd) serialized.visibilityEnd = new Date(serialized.visibilityEnd).toISOString();
+    return serialized;
+}
 
 export async function GET() {
     await dbConnect();
@@ -16,7 +26,7 @@ export async function GET() {
             { visibilityEnd: { $exists: false } },
             { visibilityEnd: null }
         ]
-    });
+    }).lean();
 
     const membershipOrder = { 'Platinum': 1, 'Gold': 2, 'Silver': 3, 'Bronze': 4 };
 
@@ -37,7 +47,7 @@ export async function GET() {
         return a.name.localeCompare(b.name);
     });
 
-    return NextResponse.json(artists);
+    return NextResponse.json(artists.map(serializeDoc));
 }
 
 export async function POST(req: NextRequest) {
@@ -46,5 +56,10 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const data = await req.json();
     const artist = await Artist.create(data);
-    return NextResponse.json(artist, { status: 201 });
+
+    // Instant Invalidaton for Frontpage and Public Listings
+    revalidatePath("/artists");
+    revalidatePath("/");
+
+    return NextResponse.json(serializeDoc(artist.toObject()), { status: 201 });
 }

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import Sponsor from "@/models/Sponsor";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
     await dbConnect();
@@ -17,5 +18,8 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const data = await req.json();
     const sponsor = await Sponsor.create(data);
+
+    revalidatePath("/sponsors");
+
     return NextResponse.json(sponsor, { status: 201 });
 }

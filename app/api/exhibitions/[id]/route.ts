@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import Exhibition from "@/models/Exhibition";
+import { revalidatePath } from "next/cache";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -25,6 +26,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         if (!exhibition) return NextResponse.json({ error: "Exhibition not found" }, { status: 404 });
         Object.assign(exhibition, data);
         await exhibition.save();
+
+        revalidatePath("/exhibitions");
+        revalidatePath("/");
+        if (exhibition.slug) revalidatePath(`/exhibitions/${exhibition.slug}`);
+
         return NextResponse.json(exhibition);
     } catch (err: any) {
         console.error("PUT /api/exhibitions error:", err);
@@ -37,6 +43,11 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await dbConnect();
-    await Exhibition.findByIdAndDelete(id);
+    const exhibition = await Exhibition.findByIdAndDelete(id);
+
+    revalidatePath("/exhibitions");
+    revalidatePath("/");
+    if (exhibition && exhibition.slug) revalidatePath(`/exhibitions/${exhibition.slug}`);
+
     return NextResponse.json({ success: true });
 }

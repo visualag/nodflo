@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import News from "@/models/News";
+import { revalidatePath } from "next/cache";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -25,6 +26,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
         Object.assign(item, data);
         await item.save();
+
+        revalidatePath("/news");
+        revalidatePath("/");
+        if (item.slug) revalidatePath(`/news/${item.slug}`);
+
         return NextResponse.json(item);
     } catch (err: any) {
         console.error("PUT /api/news error:", err);
@@ -37,6 +43,11 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await dbConnect();
-    await News.findByIdAndDelete(id);
+    const newsItem = await News.findByIdAndDelete(id);
+
+    revalidatePath("/news");
+    revalidatePath("/");
+    if (newsItem && newsItem.slug) revalidatePath(`/news/${newsItem.slug}`);
+
     return NextResponse.json({ success: true });
 }

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import TeamMember from "@/models/TeamMember";
+import { revalidatePath } from "next/cache";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -17,6 +18,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         if (!member) return NextResponse.json({ error: "Team member not found" }, { status: 404 });
         Object.assign(member, data);
         await member.save();
+
+        revalidatePath("/team");
+
         return NextResponse.json(member);
     } catch (err: any) {
         console.error("PUT /api/team error:", err);
@@ -30,5 +34,8 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await dbConnect();
     await TeamMember.findByIdAndDelete(id);
+
+    revalidatePath("/team");
+
     return NextResponse.json({ success: true });
 }

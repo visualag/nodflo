@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import News from "@/models/News";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
     await dbConnect();
@@ -17,5 +18,9 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const data = await req.json();
     const newsItem = await News.create(data);
+
+    revalidatePath("/news");
+    revalidatePath("/");
+
     return NextResponse.json(newsItem, { status: 201 });
 }
