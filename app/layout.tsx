@@ -34,7 +34,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   await dbConnect();
-  const settings = await Settings.findOne({}).lean() as any;
+  const rawSettings = await Settings.findOne({}).lean() as any;
+  const settings = JSON.parse(JSON.stringify(rawSettings));
   const currentYear = new Date().getFullYear();
 
   return (
