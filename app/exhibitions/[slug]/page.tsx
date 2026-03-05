@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     try {
         await dbConnect();
         const { slug } = await params;
-        const rawExhibition = await Exhibition.findOne({ slug }).lean() as any;
+        const rawExhibition = await Exhibition.findOne({ slug }).populate('artists.artist').lean() as any;
         const exhibition = JSON.parse(JSON.stringify(rawExhibition));
 
         if (!exhibition) return { title: "Exhibition Not Found | NOD FLOW" };
@@ -59,35 +59,15 @@ export default async function ExhibitionDetailPage({ params }: { params: Promise
     await dbConnect();
     const { slug } = await params;
 
-    const exhibitionDoc = await Exhibition.findOne({ slug }).lean() as any;
+    // EXECUTIE FINALA:
+    const rawExhibition = await Exhibition.findOne({ slug }).populate('artists.artist').lean() as any;
 
-    if (!exhibitionDoc) {
+    if (!rawExhibition) {
         return notFound();
     }
 
-    // Manually hydrate Artists to prevent Vercel Serverless MissingSchemaError crashes
-    // This is 100% resilient to deleted references and execution order bugs.
-    const rawArtistIds = exhibitionDoc.artists?.map((a: any) => a.artist).filter(Boolean) || [];
-    const validArtistIds = rawArtistIds.filter((id: string) => mongoose.Types.ObjectId.isValid(id.toString()));
-    const populatedArtists = validArtistIds.length > 0 ? await Artist.find({ _id: { $in: validArtistIds } }).lean() : [];
-
-    exhibitionDoc.artists = (exhibitionDoc.artists || []).map((a: any) => {
-        if (!a || !a.artist) return a;
-        const pa = populatedArtists.find((p: any) => p._id.toString() === a.artist.toString()) || null;
-        return {
-            ...a,
-            _id: a._id ? a._id.toString() : undefined, // Explicitly stringifying per Senior Architect Ultimatum
-            artist: pa ? {
-                ...pa,
-                _id: pa._id ? pa._id.toString() : undefined,
-                createdAt: pa.createdAt ? pa.createdAt.toString() : undefined,
-                updatedAt: pa.updatedAt ? pa.updatedAt.toString() : undefined
-            } : null
-        };
-    });
-
-    // SANITIZE DATA FOR CLIENT COMPONENTS
-    const exhibition = JSON.parse(JSON.stringify(exhibitionDoc));
+    // Aceasta este SINGURA cale prin care garantam ca obiectul e "curat"
+    const exhibition = JSON.parse(JSON.stringify(rawExhibition));
 
     const locName = exhibition.location?.name || (typeof exhibition.location === 'string' ? exhibition.location : "NOD FLOW Gallery");
     const locAddress = exhibition.location?.address || "";
