@@ -44,12 +44,17 @@ export default async function HomePage() {
   await dbConnect();
 
   // Fetch all needed data in parallel server-side
-  const [settings, allExhibitions, news, openCalls] = await Promise.all([
+  const [rawSettings, rawAllExhibitions, rawNews, rawOpenCalls] = await Promise.all([
     Settings.findOne({}).lean() as any,
     Exhibition.find({}).sort({ startDate: -1 }).lean(),
     News.find({}).sort({ date: -1 }).limit(3).lean(),
     OpenCall.find({ showOnHomepage: true }).lean()
   ]);
+
+  const settings = JSON.parse(JSON.stringify(rawSettings));
+  const allExhibitions = JSON.parse(JSON.stringify(rawAllExhibitions));
+  const news = JSON.parse(JSON.stringify(rawNews));
+  const openCalls = JSON.parse(JSON.stringify(rawOpenCalls));
 
   const current = allExhibitions.filter((e: any) => e.type === "current").slice(0, 3);
   const upcoming = allExhibitions.filter((e: any) => e.type === "upcoming").slice(0, 3);

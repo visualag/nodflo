@@ -23,7 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     try {
         await dbConnect();
         const { slug } = await params;
-        const exhibition = await Exhibition.findOne({ slug }).lean() as any;
+        const rawExhibition = await Exhibition.findOne({ slug }).lean() as any;
+        const exhibition = JSON.parse(JSON.stringify(rawExhibition));
 
         if (!exhibition) return { title: "Exhibition Not Found | NOD FLOW" };
 

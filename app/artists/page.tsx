@@ -30,7 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ArtistsPage() {
     await dbConnect();
     // Fetch all artists and sort them purely in Javascript for absolute reliability
-    const artistsRaw = await Artist.find({}).lean();
+    const rawData = await Artist.find({}).lean();
+    const artistsRaw = JSON.parse(JSON.stringify(rawData));
 
     const getRank = (membership: string) => {
         const m = membership?.toLowerCase() || "";
