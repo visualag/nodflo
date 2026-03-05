@@ -113,7 +113,7 @@ export default async function ExhibitionDetailPage({ params }: { params: Promise
 
                 <section className="section">
                     <div className="container">
-                        <div className="exhibition-detail-grid">
+                        <div className="exhibition-main-flex">
                             <div>
                                 {exhibition.description && (
                                     <>
@@ -137,7 +137,7 @@ export default async function ExhibitionDetailPage({ params }: { params: Promise
                             </div>
 
                             {/* Sidebar */}
-                            <aside>
+                            <aside className="exhibition-sidebar-wrapper">
                                 <div className="exhibition-sidebar__sticky">
                                     <div className="exhibition-sidebar__info">
                                         <div>
