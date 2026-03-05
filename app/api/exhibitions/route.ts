@@ -18,7 +18,11 @@ function serializeDoc(doc: any) {
         serialized.artists = serialized.artists.map((a: any) => ({
             ...a,
             _id: a._id?.toString() || undefined,
-            artist: typeof a.artist === 'object' && a.artist !== null ? serializeDoc(a.artist) : a.artist?.toString()
+            artist: typeof a.artist === 'object' && a.artist !== null ? {
+                ...serializeDoc(a.artist),
+                profileImage: a.artist.profileImage || { url: '', public_id: '', blurDataURL: '' },
+                socials: a.artist.socials || { instagram: '', website: '' }
+            } : a.artist?.toString()
         }));
     }
     return serialized;

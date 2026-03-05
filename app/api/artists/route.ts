@@ -8,7 +8,12 @@ import { revalidatePath } from "next/cache";
 
 function serializeDoc(doc: any) {
     if (!doc) return doc;
-    const serialized = { ...doc, _id: doc._id.toString() };
+    const serialized = {
+        ...doc,
+        _id: doc._id.toString(),
+        profileImage: doc.profileImage || { url: '', public_id: '', blurDataURL: '' },
+        socials: doc.socials || { instagram: '', website: '' }
+    };
     if (serialized.createdAt) serialized.createdAt = new Date(serialized.createdAt).toISOString();
     if (serialized.updatedAt) serialized.updatedAt = new Date(serialized.updatedAt).toISOString();
     if (serialized.visibilityEnd) serialized.visibilityEnd = new Date(serialized.visibilityEnd).toISOString();

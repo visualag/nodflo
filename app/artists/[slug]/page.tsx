@@ -62,11 +62,18 @@ export default function ArtistDetailPage() {
                                         {artist.nationality}
                                     </p>
                                 )}
-                                {artist.website && (
-                                    <a href={ensureExternalLink(artist.website)} target="_blank" rel="noopener noreferrer" className="btn btn--outline" style={{ marginTop: 16 }}>
-                                        Website →
-                                    </a>
-                                )}
+                                <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                                    {(artist.socials?.website || artist.website) && (
+                                        <a href={ensureExternalLink(artist.socials?.website || artist.website)} target="_blank" rel="noopener noreferrer" className="btn btn--outline btn--sm">
+                                            Website ↗
+                                        </a>
+                                    )}
+                                    {artist.socials?.instagram && (
+                                        <a href={`https://instagram.com/${artist.socials.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="btn btn--outline btn--sm">
+                                            Instagram ↗
+                                        </a>
+                                    )}
+                                </div>
                             </div>
                             <div>
                                 <h1 style={{ fontFamily: "var(--font-serif)", fontWeight: 400, fontSize: "clamp(2.5rem,5vw,4rem)", marginBottom: 8, lineHeight: 1.1 }}>
