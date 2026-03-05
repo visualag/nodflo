@@ -19,6 +19,8 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
+
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     try {
         await dbConnect();
@@ -71,14 +73,20 @@ export default async function ExhibitionDetailPage({ params }: { params: Promise
 
     exhibitionDoc.artists = (exhibitionDoc.artists || []).map((a: any) => {
         if (!a || !a.artist) return a;
+        const pa = populatedArtists.find((p: any) => p._id.toString() === a.artist.toString()) || null;
         return {
             ...a,
-            artist: populatedArtists.find((pa: any) => pa._id.toString() === a.artist.toString()) || null
+            _id: a._id ? a._id.toString() : undefined, // Explicitly stringifying per Senior Architect Ultimatum
+            artist: pa ? {
+                ...pa,
+                _id: pa._id ? pa._id.toString() : undefined,
+                createdAt: pa.createdAt ? pa.createdAt.toString() : undefined,
+                updatedAt: pa.updatedAt ? pa.updatedAt.toString() : undefined
+            } : null
         };
     });
 
     // SANITIZE DATA FOR CLIENT COMPONENTS
-    // Never pass the raw lean() object directly if it contains Mongoose internals or non-serializable types.
     const exhibition = JSON.parse(JSON.stringify(exhibitionDoc));
 
     const locName = exhibition.location?.name || (typeof exhibition.location === 'string' ? exhibition.location : "NOD FLOW Gallery");
